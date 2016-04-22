@@ -48,6 +48,12 @@ class Piece(object):
         self.color = color
         self.position = ''
 
+    def get_color(self):
+        return self.color
+
+    def get_type(self):
+        return self.piece
+
     def get_position(self):
         '''
         Get the board position of this piece
@@ -166,7 +172,7 @@ class Knight(Piece):
             col = chr((from_col + int(move[0]) + 0x60))
             if row in range(1, 9) and col in COLUMNS:
                 valid_moves.append('%c%d' % (col, row))
-        return valid_moves
+        return sorted(valid_moves)
 
 class Rook(Piece):
     '''

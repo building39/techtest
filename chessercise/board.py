@@ -40,17 +40,17 @@ class Board(object):
         return ok_pos
 
     def is_valid_move(self, from_pos, to_pos):
-        error = False
+        ok_move = True
 
         if not self.is_valid_position(to_pos):
             print('To position %s is off the board' % to_pos)
-            error = True
+            ok_move = False
 
         if not self.is_valid_position(from_pos):
             print('From position %s is off the board' % from_pos)
-            error = True
+            ok_move = False
 
-        return(not error)
+        return(ok_move)
 
 
     def set_piece(self, piece, position):
