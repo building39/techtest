@@ -4,7 +4,6 @@ Created on Apr 22, 2016
 @author: mmartin
 '''
 
-import sys
 from board import COLUMNS
 
 
@@ -18,83 +17,133 @@ PIECES = {
 }
 
 def piece_factory(piece, color='white'):
-
-        if piece == 'king':
-            return King(piece, color)
-        elif piece == 'queen':
-            return Queen(piece, color)
-        elif piece == 'bishop':
-            return Bishop(piece, color)
-        elif piece == 'knight':
-            return Knight(piece, color)
-        elif piece == 'rook':
-            return Rook(piece, color)
-        elif piece == 'pawn':
-            return Pawn(piece, color)
-        else:
-            return None
+    '''
+    An object factory for chess pieces
+    '''
+    if piece == 'king':
+        return King(piece, color)
+    elif piece == 'queen':
+        return Queen(piece, color)
+    elif piece == 'bishop':
+        return Bishop(piece, color)
+    elif piece == 'knight':
+        return Knight(piece, color)
+    elif piece == 'rook':
+        return Rook(piece, color)
+    elif piece == 'pawn':
+        return Pawn(piece, color)
+    else:
+        return None
 
 class Piece(object):
     '''
     classdocs
     '''
 
-
     def __init__(self, piece, color='white'):
         '''
         Constructor
         '''
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
         self.piece = piece
         self.color = color
         self.position = ''
 
     def get_position(self):
+        '''
+        Get the board position of this piece
+        '''
         return self.position
 
     def set_position(self, position):
+        '''
+        Set the board position of this piece
+        '''
         self.position = position
 
-
-class King(Piece):
-    '''
-    classdocs
-    '''
-
-class Queen(Piece):
-    '''
-    classdocs
-    '''
-
-    def legal_moves(self):
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
+    def diagonal_moves(self):
+        '''
+        Calculate all possible diagonal moves for this piece
+        '''
         valid_moves = []
         position = self.position
         from_col = ord(position[0]) - 0x60
         from_row = int(position[1])
         for move in range(1, 9):
+            col = from_col + move
+            row = from_row + move
+            if col < 9 and col != from_col and row < 9:
+                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+            col = from_col - move
+            row - from_row + move
+            if col > 0 and col != from_col and row < 9:
+                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+            col = from_col + move
+            row = from_row - move
+            if col < 9 and col != from_col and row > 0:
+                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+            col = from_col - move
+            row = from_row - move
+            if col > 0 and col != from_col and row > 0:
+                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+
+        return sorted(valid_moves)
+
+    def horizontal_moves(self):
+        '''
+        Calculate all possible horizontal moves for this piece
+        '''
+        valid_moves = []
+        position = self.position
+        from_row = int(position[1])
+        for move in range(1, 9):
             if move != from_row:  # Horizontal moves
                 valid_moves.append('%c%d' % (position[0], move))
+        return sorted(valid_moves)
+
+    def vertical_moves(self):
+        '''
+        Calculate all possible vertical moves for this piece
+        '''
+        valid_moves = []
+        position = self.position
+        from_col = ord(position[0]) - 0x60
+        from_row = int(position[1])
+        for move in range(1, 9):
             if move != from_col:  # Vertical moves
                 valid_moves.append('%c%d' % (chr(move + 0x60), from_row))
-            if move != from_row and move != from_col:  # Diagonal moves
-                print('move: %d from_row: %d from_col: %d' % (move, from_row, from_col))
-                new_col = '%c%d' % (chr(move + 0x60), move)
-                print('New col: %s' % new_col)
-                valid_moves.append('%c%d' % (chr(move + 0x60), move))
+        return sorted(valid_moves)
 
+class King(Piece):
+    '''
+    A king piece
+    '''
+
+    def legal_moves(self):
+        print('Not implemented')
+
+class Queen(Piece):
+    '''
+    A queen piece
+    '''
+
+    def legal_moves(self):
+        valid_moves = self.horizontal_moves()
+        valid_moves.extend(self.vertical_moves())
+        valid_moves.extend(self.diagonal_moves())
         return sorted(valid_moves)
 
 class Bishop(Piece):
     '''
-    classdocs
+    a bishop piece
     '''
+
+    def legal_moves(self):
+        return self.diagonal_moves()
+
 
 class Knight(Piece):
     '''
-    classdocs
+    a knight piece
     '''
 #
     MOVE_DIRECTIONS = [(2, 1),
@@ -106,6 +155,7 @@ class Knight(Piece):
                        (-1, 2),
                        (-1, -2)
                        ]
+
     def legal_moves(self):
         valid_moves = []
         position = self.position
@@ -120,24 +170,18 @@ class Knight(Piece):
 
 class Rook(Piece):
     '''
-    classdocs
+    A rook piece
     '''
     def legal_moves(self):
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
-        valid_moves = []
-        position = self.position
-        from_col = ord(position[0]) - 0x60
-        from_row = int(position[1])
-        for move in range(1, 9):
-            if move != from_row:  # Horizontal moves
-                valid_moves.append('%c%d' % (position[0], move))
-            if move != from_col:  # Vertical moves
-                valid_moves.append('%c%d' % (chr(move + 0x60), from_row))
+        valid_moves = self.horizontal_moves()
+        valid_moves.extend(self.vertical_moves())
+        return valid_moves
 
-        return sorted(valid_moves)
 
 class Pawn(Piece):
     '''
-    classdocs
+    A pawn piece
     '''
+
+    def legal_moves(self):
+        print('Not implemented')
