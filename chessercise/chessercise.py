@@ -11,6 +11,7 @@ import sys
 
 from board import Board
 from piece import PIECES, piece_factory
+from knight_moves import KNIGHT_MOVES
 
 VERSION = '1.0.0'
 
@@ -55,21 +56,66 @@ class Chessercise(object):
 
         row = int(self.position[1])
         col = ord(self.position[0]) - 0x60
-
-        far_col = 8 if col < 5 else 1
-        far_row = 8 if row < 5 else 1
-        far_pos = '%c%d' % (chr(far_col + 0x60), far_row)
+        far_col = 0
+        far_row = 0
 
         if self.piece.get_type().lower() == 'bishop':
+            far_col = 8 if col < 5 else 1
+            far_row = 8 if row < 5 else 1
+            far_pos = '%c%d' % (chr(far_col + 0x60), far_row)
             if self.board.board[self.position]['color'] != self.board.board[far_pos]['color']:
                 far_row = (far_row + 1) if far_row == 1 else (far_row - 1)
         elif self.piece.get_type().lower() == 'pawn':
+            far_col = col
             if self.piece.get_color() == 'white' and row == 2:
                 far_row = 4
+            elif self.piece.get_color() == 'black' and row == 7:
+                far_row = 5
+            else:
+                far_row = (row + 1) if row < 8 else row
+        elif self.piece.get_type().lower() == 'king':
+            far_col = col
+            far_row = (row + 1) if row < 8 else (row - 1)
         elif self.piece.get_type().lower() == 'knight':
-            # this one will be tricky
-            pass
-
+            # this one is tricky
+            if row < 5 and col < 5:
+                quadrant = 1
+            elif row < 5 and col > 4:
+                quadrant = 2
+            elif row > 4 and col < 5:
+                quadrant = 3
+            else:
+                quadrant = 4
+            if quadrant == 1:
+                while col < 7:
+                    row += 1
+                    col += 2
+            elif quadrant == 2:
+                while col > 2:
+                    row += 1
+                    col -= 2
+            elif quadrant == 3:
+                while col < 7:
+                    col += 2
+                    row -= 1
+            else:
+                while col > 2:
+                    col -= 2
+                    row -= 1
+            new_pos = '%c%d' % (chr(col + 0x60), row)
+            try:
+                if position == 'f5':
+                    print('position %s ended at new position %s' % (position, new_pos))
+                for (col_inc, row_inc) in KNIGHT_MOVES[quadrant - 1][new_pos]:
+                    col += col_inc
+                    row += row_inc
+            except:
+                print('Exception in quadrant %d position %s' % (quadrant, new_pos))
+            far_row = row
+            far_col = col
+        elif self.piece.get_type().lower() in ['rook', 'queen']:
+            far_col = 8 if col < 5 else 1
+            far_row = 8 if row < 5 else 1
         far_pos = '%c%d' % (chr(far_col + 0x60), far_row)
         return (far_col, far_row, far_pos)
 

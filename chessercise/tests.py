@@ -24,6 +24,51 @@ class TestChessercise(unittest.TestCase):
         self.assertTrue(row in range(1, 9))
         self.assertTrue(col in range(1, 9))
 
+    def testGetFarthestTile(self):
+        board = Board(empty=True)
+        piece = piece_factory('pawn')
+        pos = 'b2'
+        c = Chessercise(board, piece, pos)
+        (far_col, far_row, _far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_col, 2, "column should not change.")
+        self.assertEquals(far_row, 4, "Row should increment by 2.")
+        pos = 'b5'
+        c = Chessercise(board, piece, pos)
+        (far_col, far_row, _far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_col, 2, "column should not change.")
+        self.assertEquals(far_row, 6, "Row should increment by 1.")
+        piece = piece_factory('rook')
+        pos = 'a1'
+        c = Chessercise(board, piece, pos)
+        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
+        piece = piece_factory('queen')
+        pos = 'a1'
+        c = Chessercise(board, piece, pos)
+        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
+        piece = piece_factory('king')
+        pos = 'a1'
+        c = Chessercise(board, piece, pos)
+        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_pos, 'a2', 'Position should be a2, not %s.' % far_pos)
+        piece = piece_factory('bishop')
+        pos = 'a1'
+        c = Chessercise(board, piece, pos)
+        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
+        pos = 'a2'
+        c = Chessercise(board, piece, pos)
+        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+        self.assertEquals(far_pos, 'h7', 'Position should be h7, not %s.' % far_pos)
+        piece = piece_factory('knight')
+        for i in range(1, 9):
+            for j in range(1, 9):
+                pos = '%c%d' % (chr(i + 0x60), j)
+                c = Chessercise(board, piece, pos)
+                (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
+                print('Start: %s End: %s' % (pos, far_pos))
+
     def testPopulateRandom(self):
         num_pieces = 8
         board = Board(empty=True)
