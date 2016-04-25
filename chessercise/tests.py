@@ -1,6 +1,6 @@
 import unittest
 
-from board import Board
+from board import Board, is_odd
 from piece import piece_factory, PIECES
 from chessercise import Chessercise
 
@@ -32,11 +32,21 @@ class TestChessercise(unittest.TestCase):
         c._populate_random(num_pieces)
         count = 0
         for k, v in c.board.board.iteritems():
-            if v:
+            if v['piece']:
                 count += 1
-                print("Found a %s at %s" % (v, k))
+                print("Found a %s at %s" % (v['piece'], k))
         self.assertEquals(count, num_pieces, "should have found %d pieces, but found %d instead." % (num_pieces, count))
 
+    def testTileColor(self):
+        board = Board(empty=True)
+        for k, v in board.board.iteritems():
+            row = int(k[1])
+            col = ord(k[0]) - 0x60
+            if (is_odd(row) and is_odd(col)) or \
+                (not is_odd(row) and not is_odd(col)):
+                    self.failUnlessEqual(v['color'], 'black')
+            else:
+                self.failUnlessEqual(v['color'], 'white')
 
     def testBoard(self):
         board = Board(empty=True)

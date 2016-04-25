@@ -54,7 +54,7 @@ class Chessercise(object):
     def _get_random_tile(self):
         row = random.randint(1, 8)
         col = random.randint(1, 8)
-        if self.board.board['%c%d' % (chr(col + 0x60), row)]:  # already occupied?
+        if self.board.board['%c%d' % (chr(col + 0x60), row)]['piece']:  # already occupied?
             return self._get_random_tile()
         else:
             return '%c%d' % (chr(col + 0x60), row)
@@ -77,7 +77,23 @@ class Chessercise(object):
         return piece.legal_moves()
 
     def target(self, piece, position):
+        self.piece = piece
+        self.position = position
         self._populate_random(8)
+
+
+        row = int(self.position[1])
+        col = ord(self.position[0]) - 0x60
+        # compute color of current tile
+
+        # compute furthest tile from our piece
+        far_col = 8 if col < 5 else 1
+        far_row = 8 if row < 5 else 1
+
+        if self.piece.get_type.lower() == 'bishop':
+            pass
+
+
 
 
 def usage():
@@ -146,7 +162,7 @@ def main(argv):
     board = Board(empty=True)
 
     if board.is_valid_position(in_position):
-        piece.set_position(in_position)
+        board.set_piece(piece, in_position)
     else:
         print('Failed on position %s' % in_position)
         sys.exit(1)
@@ -156,8 +172,7 @@ def main(argv):
         obj.target(piece, in_position)
     else:
         moves = obj.show_moves(piece, in_position)
-
-    print moves
+        print moves
 
 if __name__ == '__main__':
     main(sys.argv[1:])

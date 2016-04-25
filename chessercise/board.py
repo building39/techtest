@@ -9,6 +9,9 @@ import sys
 
 COLUMNS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
+def is_odd(num):
+    return num & 0x1
+
 class Board(object):
 
     def __init__(self, empty):
@@ -19,7 +22,13 @@ class Board(object):
         if empty:
             for column in range(ord('a'), ord('i')):
                 for row in range(1, 9):
-                    self.board['%c%d' % (chr(column), row)] = None
+                    if (is_odd(row) and is_odd(column)) or \
+                       (not is_odd(row) and not is_odd(column)):
+                        color = 'black'
+                    else:
+                        color = 'white'
+                    self.board['%c%d' % (chr(column), row)] = {'color': color,
+                                                               'piece': None}
         else:
             # here is where we would populate a brand new game on the board
             pass
@@ -50,5 +59,5 @@ class Board(object):
         return(ok_move)
 
     def set_piece(self, piece, position):
-        self.board[position] = piece
+        self.board[position]['piece'] = piece
         piece.set_position(position)
