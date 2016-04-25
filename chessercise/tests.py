@@ -1,8 +1,42 @@
 import unittest
 
 from board import Board
-from piece import piece_factory
+from piece import piece_factory, PIECES
+from chessercise import Chessercise
+
 class TestChessercise(unittest.TestCase):
+
+    def testCreateRandomPiece(self):
+        pieces = PIECES.keys()
+        board = Board(empty=True)
+        piece = piece_factory('knight')
+        c = Chessercise(board, piece, 'a1')
+        p = c._create_random_piece()
+        self.assertTrue(p.lower() in pieces)
+
+    def testGetRandomTile(self):
+        board = Board(empty=True)
+        piece = piece_factory('knight')
+        c = Chessercise(board, piece, 'a1')
+        tile = c._get_random_tile()
+        row = int(tile[1])
+        col = ord(tile[0]) - 0x60
+        self.assertTrue(row in range(1, 9))
+        self.assertTrue(col in range(1, 9))
+
+    def testPopulateRandom(self):
+        num_pieces = 8
+        board = Board(empty=True)
+        piece = piece_factory('knight')
+        c = Chessercise(board, piece, 'a1')
+        c._populate_random(num_pieces)
+        count = 0
+        for k, v in c.board.board.iteritems():
+            if v:
+                count += 1
+                print("Found a %s at %s" % (v, k))
+        self.assertEquals(count, num_pieces, "should have found %d pieces, but found %d instead." % (num_pieces, count))
+
 
     def testBoard(self):
         board = Board(empty=True)

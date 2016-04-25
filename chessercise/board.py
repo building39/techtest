@@ -49,9 +49,6 @@ class Board(object):
 
         return(ok_move)
 
-
     def set_piece(self, piece, position):
         self.board[position] = piece
         piece.set_position(position)
-
-        print self.board
