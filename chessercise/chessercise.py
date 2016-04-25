@@ -47,6 +47,7 @@ def usage():
     print ('  --piece     - Chess piece name. one of "King", "Queen", "Bishop", "Knight", "Rook", or "Pawn".')
     print ('                Case insensitive.')
     print ('  --position  - Board position in standard notation.')
+    print ('  --target    - Calculate and output the minimum set of moves to the most distant tile')
     print ('')
 
     sys.exit(0)
@@ -58,6 +59,7 @@ def main(argv):
 
     in_piece = ''
     in_position = ''
+    target = False
 
     if (len(argv) < 2):
         print "Number of args: %d" % len(argv)
@@ -67,7 +69,8 @@ def main(argv):
         opts, _args = getopt.getopt(argv, '',
                                     ['help',
                                      'piece=',
-                                     'position='])
+                                     'position=',
+                                     'target'])
     except getopt.GetoptError, e:
         print ('opt error %s' % e)
         print ('')
@@ -80,6 +83,8 @@ def main(argv):
             in_piece = arg.lower()
         elif opt == '--position':
             in_position = arg
+        elif opt == '--target':
+            target = True
 
 #    sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #    import pydevd; pydevd.settrace()
@@ -99,7 +104,10 @@ def main(argv):
         sys.exit(1)
 
     obj = Chessercise(board, piece, in_position)
-    moves = obj.show_moves(piece, in_position)
+    if target:
+        pass
+    else:
+        moves = obj.show_moves(piece, in_position)
 
     print moves
 
