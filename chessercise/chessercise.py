@@ -51,6 +51,28 @@ class Chessercise(object):
             return self._create_random_piece()
         return new_piece
 
+    def _get_farthest_tile(self, position):
+
+        row = int(self.position[1])
+        col = ord(self.position[0]) - 0x60
+
+        far_col = 8 if col < 5 else 1
+        far_row = 8 if row < 5 else 1
+        far_pos = '%c%d' % (chr(far_col + 0x60), far_row)
+
+        if self.piece.get_type().lower() == 'bishop':
+            if self.board.board[self.position]['color'] != self.board.board[far_pos]['color']:
+                far_row = (far_row + 1) if far_row == 1 else (far_row - 1)
+        elif self.piece.get_type().lower() == 'pawn':
+            if self.piece.get_color() == 'white' and row == 2:
+                far_row = 4
+        elif self.piece.get_type().lower() == 'knight':
+            # this one will be tricky
+            pass
+
+        far_pos = '%c%d' % (chr(far_col + 0x60), far_row)
+        return (far_col, far_row, far_pos)
+
     def _get_random_tile(self):
         row = random.randint(1, 8)
         col = random.randint(1, 8)
@@ -72,8 +94,7 @@ class Chessercise(object):
         '''
         Show all possible moves for this piece, from this position.
         '''
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
+
         return piece.legal_moves()
 
     def target(self, piece, position):
@@ -81,18 +102,13 @@ class Chessercise(object):
         self.position = position
         self._populate_random(8)
 
-
-        row = int(self.position[1])
-        col = ord(self.position[0]) - 0x60
-        # compute color of current tile
+        tilecolor = self.board.board[self.position]['color']
 
         # compute furthest tile from our piece
-        far_col = 8 if col < 5 else 1
-        far_row = 8 if row < 5 else 1
+        (far_col, far_row, far_pos) = self._get_farthest_tile(self.position)
 
-        if self.piece.get_type.lower() == 'bishop':
-            pass
-
+        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        # import pydevd; pydevd.settrace()
 
 
 
