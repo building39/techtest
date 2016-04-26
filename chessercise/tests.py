@@ -26,48 +26,50 @@ class TestChessercise(unittest.TestCase):
 
     def testGetFarthestTile(self):
         board = Board(empty=True)
-        piece = piece_factory('pawn')
-        pos = 'b2'
-        c = Chessercise(board, piece, pos)
-        (far_col, far_row, _far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_col, 2, "column should not change.")
-        self.assertEquals(far_row, 4, "Row should increment by 2.")
-        pos = 'b5'
-        c = Chessercise(board, piece, pos)
-        (far_col, far_row, _far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_col, 2, "column should not change.")
-        self.assertEquals(far_row, 6, "Row should increment by 1.")
-        piece = piece_factory('rook')
-        pos = 'a1'
-        c = Chessercise(board, piece, pos)
-        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
-        piece = piece_factory('queen')
-        pos = 'a1'
-        c = Chessercise(board, piece, pos)
-        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
-        piece = piece_factory('king')
-        pos = 'a1'
-        c = Chessercise(board, piece, pos)
-        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_pos, 'a2', 'Position should be a2, not %s.' % far_pos)
-        piece = piece_factory('bishop')
-        pos = 'a1'
-        c = Chessercise(board, piece, pos)
-        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_pos, 'h8', 'Position should be h8, not %s.' % far_pos)
-        pos = 'a2'
-        c = Chessercise(board, piece, pos)
-        (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-        self.assertEquals(far_pos, 'h7', 'Position should be h7, not %s.' % far_pos)
         piece = piece_factory('knight')
-        for i in range(1, 9):
-            for j in range(1, 9):
-                pos = '%c%d' % (chr(i + 0x60), j)
-                c = Chessercise(board, piece, pos)
-                (_far_col, _far_row, far_pos) = c._get_farthest_tile(pos)
-                print('Start: %s End: %s' % (pos, far_pos))
+        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
+        for pos in ['a1', 'a2', 'a3', 'a4',
+                    'b1', 'b2', 'b3', 'b4',
+                    'c1', 'c2', 'c3', 'c4',
+                    'd1', 'd2', 'd3', 'd4',
+                    ]:
+
+            c = Chessercise(board, piece, pos)
+            (quadrant, position) = c._get_farthest_tile(pos)
+            self.assertEqual(position, 'h8',
+                             'Got tile %s instead of h8 for position %s' % (position, pos))
+            self.assertEqual(quadrant, 1, 'Got quadrant %d instead of 1' % quadrant)
+        for pos in ['a5', 'a6', 'a7', 'a8',
+                    'b5', 'b6', 'b7', 'b8',
+                    'c5', 'c6', 'c7', 'c8',
+                    'd5', 'd6', 'd7', 'd8',
+                    ]:
+            c = Chessercise(board, piece, pos)
+            (quadrant, position) = c._get_farthest_tile(pos)
+            self.assertEqual(position, 'h1',
+                             'Got tile %s instead of h1 for position %s' % (position, pos))
+            self.assertEqual(quadrant, 3, 'Got quadrant %d instead of 3' % quadrant)
+        for pos in ['e1', 'f1', 'g1', 'h1',
+                    'e2', 'f2', 'g2', 'h2',
+                    'e3', 'f3', 'g3', 'h3',
+                    'e4', 'f4', 'g4', 'h4',
+                    ]:
+            c = Chessercise(board, piece, pos)
+            (quadrant, position) = c._get_farthest_tile(pos)
+            self.assertEqual(position, 'a8',
+                             'Got tile %s instead of h1 for position %s' % (position, pos))
+            self.assertEqual(quadrant, 2, 'Got quadrant %d instead of 3' % quadrant)
+        for pos in ['e5', 'f6', 'g7', 'h8',
+                    'e5', 'f6', 'g7', 'h8',
+                    'e5', 'f6', 'g7', 'h8',
+                    'e5', 'f6', 'g7', 'h8',
+                    ]:
+            c = Chessercise(board, piece, pos)
+            (quadrant, position) = c._get_farthest_tile(pos)
+            self.assertEqual(position, 'a1',
+                             'Got tile %s instead of a1 for position %s' % (position, pos))
+            self.assertEqual(quadrant, 4, 'Got quadrant %d instead of 4' % quadrant)
 
     def testPopulateRandom(self):
         num_pieces = 8
