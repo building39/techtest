@@ -12,6 +12,7 @@ import sys
 from board import Board
 from piece import PIECES, piece_factory
 from knight_moves import KNIGHT_MOVES
+from docutils.utils.math.math2html import VerticalSpace
 
 VERSION = '1.0.0'
 
@@ -33,6 +34,85 @@ class Chessercise(object):
         self.piece = piece
         self.position = position
         self.pieces = PIECES.keys()
+        self.deadends = []
+        self.path_list = []
+        self.path = []
+        self.cur_pos = ''
+
+    def get_horizontal_moves(self):
+        moves = self.piece.horizontal_moves(self.board)
+        i = 0
+        while(True):
+            if i > len(moves) - 1:
+                break
+            m = moves[i]
+            if m == self.far_pos:
+                i += 1
+                continue
+            if m in self.path:
+                moves.pop(i)
+                continue
+            if m in self.deadends:
+                moves.pop(i)
+                continue
+            if self.board.board[m]['piece']:
+                moves.pop(i)
+                continue
+            row = int(m[1]) - 1
+            if row > 0:
+                cell = "%c%d" % (m[0], row)
+                if not self.board.board[cell]['piece']:
+                    i += 1
+                    continue
+            row = int(m[1]) + 1
+            if row < 9:
+                cell = "%c%d" % (m[0], row)
+                if not self.board.board[cell]['piece']:
+                    i += 1
+                    continue
+            moves.pop(i)  # no vertical moves in this column
+
+        if self.quadrant in [1, 3]:
+            return sorted(moves, reverse=True)
+        else:
+            return sorted(moves)
+
+    def get_vertical_moves(self):
+        moves = self.piece.vertical_moves(self.board)
+        i = 0
+        while(True):
+            if i > len(moves) - 1:
+                break
+            m = moves[i]
+            if m == self.far_pos:
+                i += 1
+                continue
+            if m in self.path:
+                moves.pop(i)
+                continue
+            if m in self.deadends:
+                moves.pop(i)
+                continue
+            if self.board.board[m]['piece']:
+                moves.pop(i)
+                continue
+            col = ord(m[0]) - 0x60 - 1
+            if col > 0:
+                cell = "%c%c" % (chr(col + 0x60), m[1])
+                if not self.board.board[cell]['piece']:
+                    i += 1
+                    continue
+            col = ord(m[0]) - 0x60 + 1
+            if col < 9:
+                cell = "%c%c" % (chr(col + 0x60), m[1])
+                if not self.board.board[cell]['piece']:
+                    i += 1
+                    continue
+            moves.pop(i)  # no vertical moves in this column
+        if self.quadrant in [1, 2]:
+            return sorted(moves, reverse=True)
+        else:
+            return sorted(moves)
 
     def _create_random_piece(self):
         new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
@@ -72,6 +152,42 @@ class Chessercise(object):
             far_pos = 'a1'
         return (quadrant, far_pos)
 
+    def _get_max_horz(self, far_pos):
+        moves = self.piece.horizontal_moves(self.board)
+        move = ''
+        if moves[-1] == far_pos:
+            move = moves[-1]
+        else:
+            if self.board.board[moves[-1]]['piece']:
+                if len(moves) > 1:
+                    move = moves[-2]
+                else:
+                    return None
+            else:
+                move = moves[-1]
+        if move > self.piece.get_position():
+            return move
+        else:
+            return None
+
+    def _get_max_vert(self, far_pos):
+        moves = self.piece.vertical_moves(self.board)
+        move = ''
+        if moves[-1] == far_pos:
+            move = moves[-1]
+        else:
+            if self.board.board[moves[-1]]['piece']:
+                if len(moves) > 1:
+                    move = moves[-2]
+                else:
+                    return None
+            else:
+                move = moves[-1]
+        if move > self.piece.get_position():
+            return move
+        else:
+            return None
+
     def _get_random_tile(self):
         row = random.randint(1, 8)
         col = random.randint(1, 8)
@@ -82,31 +198,191 @@ class Chessercise(object):
 
     def _populate_random(self, num):
         random.seed()
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
         for _i in range(1, num + 1):
             tile = self._get_random_tile()
             new_piece = self._create_random_piece()
             self.board.set_piece(piece_factory(new_piece, color='black'), tile)
+            print('%s at %s' % (new_piece, tile))
+
+    def _target_bishop(self, quadrant, far_pos):
+        print('Bishop not implemented')
+
+    def _target_king(self, quadrant, far_pos):
+        print('King not implemented')
+
+    def _target_knight(self, quadrant, far_pos):
+        print('Knight not implemented')
+
+    def _target_pawn(self, quadrant, far_pos):
+        print('Pawn not implemented')
+
+    def _target_queen(self, quadrant, far_pos):
+        print('Queen not implemented')
+
+    def _target_rook_horz(self, moves, far_pos, path):
+        start = 0 if self.quadrant in [1, 3] else len(moves) - 1
+        for i in range(start, (len(moves) - 1) if self.hstep == 1 else 0, self.hstep):
+            if moves[i] == far_pos:
+                return path
+            self.board.set_piece(self.piece, moves[i])
+            vert_moves = self.piece.vertical_moves(self.board)
+            return self._target_rook_vert(vert_moves, far_pos, path)
+
+    def _target_rook_vert(self, moves, far_pos, path):
+        start = 0 if self.quadrant in [1, 2] else len(moves) - 1
+        for i in range(start, (len(moves) - 1) if self.vstep == 1 else 0, self.vstep):
+            if moves[i] == far_pos:
+                return path
+            self.board.set_piece(self.piece, moves[i])
+            path.extend([moves[i]])
+            new_horz = self.piece.horizontal_moves(self.board)
+            if new_horz[-1] == moves[i]:
+                new_horz = new_horz[:-1]
+            return self._target_rook_horz(new_horz, far_pos, path)
+
+    def horizontal(self, hmoves):
+        self.path.extend([self.cur_pos])
+        self.board.set_piece(self.piece, self.cur_pos)
+
+        '''
+        Origin position is not in the list of horizontal moves.
+        We process the verticals for this position first, then
+        move on to the remaining horizontals.
+        '''
+        self.vertical()
+
+        for h in hmoves:
+            self.path = [h]
+            self.cur_pos = h
+            self.board.set_piece(self.piece, self.cur_pos)
+            self.vertical()
+
+        '''
+        When the above for loop ends, we are done
+        '''
+        return
+
+
+    def vertical(self):
+        vmoves = self.get_vertical_moves()
+        path = []
+        for v in vmoves:
+            if v in self.path or v in self.deadends:
+                continue
+            if v == self.far_pos:  # found the holy grail - do something about it
+                self.path.extend([v])
+                self.path_list.extend([self.path])
+                self.path = []
+                return
+            self.cur_pos = v
+            self.board.set_piece(self.piece, self.cur_pos)
+            hmoves = self.get_horizontal_moves()
+            if hmoves:
+                for h in hmoves:
+                    if h in self.path or h in self.deadends:
+                        continue
+                    if self.cur_pos:
+                        self.path.extend([self.cur_pos])
+                    self.cur_pos = h
+                    if self.cur_pos == self.far_pos:
+                        self.path.extend([self.cur_pos])
+                        self.path_list.extend([self.path])
+                        self.path = []
+                        return
+                    self.path.extend([self.cur_pos])
+                    self.board.set_piece(self.piece, self.cur_pos)
+                    path = list(self.path)
+                    self.vertical()
+                    self.path = path
+            else:
+                self.deadends.extend([self.path[-1]])
+                self.path = self.path[:-1]  # remove last path element
+                continue
+
+
+    def _target_rook(self):
+        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
+
+        if self.quadrant == 1:
+            self.hstep = 1
+            self.vstep = 1
+        elif self.quadrant == 2:
+            self.hstep = -1
+            self.vstep = 1
+        elif self.quadrant == 3:
+            self.hstep = 1
+            self.vstep = -1
+        else:
+            self.hstep = -1
+            self.vstep = -1
+
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.horizontal(self.get_horizontal_moves())
+
+        shortest_paths = []
+        min_moves = 0
+        if self.path_list:
+            plist = list(self.path_list)
+            pth = plist.pop(0)
+            min_moves = len(pth)
+            for p in plist:
+                if len(p) < min_moves:
+                    min_moves = len(p)
+            # min_moves now has length of shortest path
+
+            for p in self.path_list:
+                if len(p) == min_moves:
+                    shortest_paths.extend([p])
+
+        if len(shortest_paths) == 0:
+            print('There were no paths to the destination')
+        else:
+            print('Found %d paths to the target' % len(self.path_list))
+            print('List of all paths:')
+            for p in self.path_list:
+                print('    %s' % p)
+            print('Shortest path is %d moves.' % (min_moves - 1))
+            print('Found %s %d %s:' % ('this' if len(shortest_paths) == 1 else 'these',
+                                       len(shortest_paths),
+                                       'path' if len(shortest_paths) == 1 else 'paths'))
+            for mp in shortest_paths:
+                print(mp)
 
     def show_moves(self, piece, position):
         '''
         Show all possible moves for this piece, from this position.
         '''
 
-        return piece.legal_moves()
+        return piece.legal_moves(self.board)
+
+
+
+
 
     def target(self, piece, position):
+        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
         self.piece = piece
         self.position = position
         self._populate_random(8)
 
+
         # compute furthest tile from our piece
-        (quadrant, far_pos) = self._get_farthest_tile(self.position)
+        (self.quadrant, self.far_pos) = self._get_farthest_tile(self.position)
 
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
-
+        if self.piece.get_type() == 'bishop':
+            self._target_bishop()
+        elif self.piece.get_type() == 'king':
+            self._target_king()
+        elif self.piece.get_type() == 'knight':
+            self._target_knight()
+        elif self.piece.get_type() == 'pawn':
+            self._target_pawn()
+        elif self.piece.get_type() == 'queen':
+            self._target_queen()
+        elif self.piece.get_type() == 'rook':
+            self._target_rook()
 
 
 def usage():

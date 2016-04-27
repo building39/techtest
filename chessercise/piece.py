@@ -4,7 +4,7 @@ Created on Apr 22, 2016
 @author: mmartin
 '''
 
-from board import COLUMNS
+from board import COLUMNS, Board
 
 
 PIECES = {
@@ -94,29 +94,67 @@ class Piece(object):
 
         return sorted(valid_moves)
 
-    def horizontal_moves(self):
+    def vertical_moves(self, board):
         '''
         Calculate all possible horizontal moves for this piece
         '''
         valid_moves = []
         position = self.position
         from_row = int(position[1])
-        for move in range(1, 9):
+        for move in range(from_row, 9):
             if move != from_row:  # Horizontal moves
-                valid_moves.append('%c%d' % (position[0], move))
+                new_pos = '%c%d' % (position[0], move)
+                if board.board[new_pos]['piece']:
+                    if board.board[new_pos]['piece'].get_color() != self.get_color():
+                        valid_moves.append('%c%d' % (position[0], move))
+                        break
+                    else:
+                        break
+                else:
+                    valid_moves.append(new_pos)
+        for move in range(from_row, 0, -1):
+            if move != from_row:  # Horizontal moves
+                new_pos = '%c%d' % (position[0], move)
+                if board.board[new_pos]['piece']:
+                    if board.board[new_pos]['piece'].get_color() != self.get_color():
+                        valid_moves.append('%c%d' % (position[0], move))
+                        break
+                    else:
+                        break
+                else:
+                    valid_moves.append(new_pos)
         return sorted(valid_moves)
 
-    def vertical_moves(self):
+    def horizontal_moves(self, board):
         '''
-        Calculate all possible vertical moves for this piece
+        Calculate all possible horizontal moves for this piece
         '''
         valid_moves = []
         position = self.position
         from_col = ord(position[0]) - 0x60
         from_row = int(position[1])
-        for move in range(1, 9):
+        for move in range(from_col, 9):
             if move != from_col:  # Vertical moves
-                valid_moves.append('%c%d' % (chr(move + 0x60), from_row))
+                new_pos = '%c%d' % (chr(move + 0x60), from_row)
+                if board.board[new_pos]['piece']:
+                    if board.board[new_pos]['piece'].get_color() != self.get_color():
+                        valid_moves.append('%c%c' % (chr(move + 0x60), position[1]))
+                        break
+                    else:
+                        break
+                else:
+                    valid_moves.append(new_pos)
+        for move in range(from_col, 0, -1):
+            if move != from_col:  # Vertical moves
+                new_pos = '%c%d' % (chr(move + 0x60), from_row)
+                if board.board[new_pos]['piece']:
+                    if board.board[new_pos]['piece'].get_color() != self.get_color():
+                        valid_moves.append('%c%c' % (chr(move + 0x60), position[1]))
+                        break
+                    else:
+                        break
+                else:
+                    valid_moves.append(new_pos)
         return sorted(valid_moves)
 
 class King(Piece):
@@ -124,7 +162,7 @@ class King(Piece):
     A king piece
     '''
 
-    def legal_moves(self):
+    def legal_moves(self, board):
         print('Not implemented')
 
 class Queen(Piece):
@@ -132,9 +170,9 @@ class Queen(Piece):
     A queen piece
     '''
 
-    def legal_moves(self):
-        valid_moves = self.horizontal_moves()
-        valid_moves.extend(self.vertical_moves())
+    def legal_moves(self, board):
+        valid_moves = self.horizontal_moves(board)
+        valid_moves.extend(self.vertical_moves(board))
         valid_moves.extend(self.diagonal_moves())
         return sorted(valid_moves)
 
@@ -143,7 +181,7 @@ class Bishop(Piece):
     a bishop piece
     '''
 
-    def legal_moves(self):
+    def legal_moves(self, board):
         return self.diagonal_moves()
 
 
@@ -162,7 +200,7 @@ class Knight(Piece):
                        (-1, -2)
                        ]
 
-    def legal_moves(self):
+    def legal_moves(self, board):
         valid_moves = []
         position = self.position
         from_col = ord(position[0]) - 0x60
@@ -178,9 +216,9 @@ class Rook(Piece):
     '''
     A rook piece
     '''
-    def legal_moves(self):
-        valid_moves = self.horizontal_moves()
-        valid_moves.extend(self.vertical_moves())
+    def legal_moves(self, board):
+        valid_moves = self.horizontal_moves(board)
+        valid_moves.extend(self.vertical_moves(board))
         return valid_moves
 
 
@@ -189,5 +227,5 @@ class Pawn(Piece):
     A pawn piece
     '''
 
-    def legal_moves(self):
+    def legal_moves(self, board):
         print('Not implemented')

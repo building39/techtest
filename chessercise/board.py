@@ -60,4 +60,6 @@ class Board(object):
 
     def set_piece(self, piece, position):
         self.board[position]['piece'] = piece
+        if piece.get_position():
+            self.board[piece.get_position()]['piece'] = None
         piece.set_position(position)
