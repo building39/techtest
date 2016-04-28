@@ -17,26 +17,29 @@ class TestChessercise(unittest.TestCase):
         pos = 'a1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'd2')
         moves = c.get_horizontal_moves()
-        self.assertEqual(moves, ['b1', 'c1', 'e1', 'f1', 'g1', 'h1'])
+        self.assertEqual(moves, ['h1', 'g1', 'f1', 'e1', 'c1', 'b1'])
 
         pos = 'a8'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'd7')
         moves = c.get_horizontal_moves()
-        self.assertEqual(moves, ['b8', 'c8', 'e8', 'f8', 'g8', 'h8'])
+        self.assertEqual(moves, ['h8', 'g8', 'f8', 'e8', 'c8', 'b8'])
 
         pos = 'a4'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'd3')
         c.board.set_piece(opp2, 'd5')
         c.path.extend(['f4'])
         c.deadends.extend(['h4'])
         moves = c.get_horizontal_moves()
-        self.assertEqual(moves, ['b4', 'c4', 'e4', 'g4'])
+        self.assertEqual(moves, ['g4', 'e4', 'c4', 'b4'])
 
     def testGetVerticalMoves(self):
         board = Board(empty=True)
@@ -47,26 +50,29 @@ class TestChessercise(unittest.TestCase):
         pos = 'a1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'b2')
         moves = c.get_vertical_moves()
-        self.assertEqual(moves, ['a3', 'a4', 'a5', 'a6', 'a7', 'a8'])
+        self.assertEqual(moves, ['a8', 'a7', 'a6', 'a5', 'a4', 'a3'])
 
         pos = 'h1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'g2')
         moves = c.get_vertical_moves()
-        self.assertEqual(moves, ['h3', 'h4', 'h5', 'h6', 'h7', 'h8'])
+        self.assertEqual(moves, ['h8', 'h7', 'h6', 'h5', 'h4', 'h3'])
 
         pos = 'd1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
         c.board.set_piece(opp1, 'c2')
         c.board.set_piece(opp2, 'e2')
         c.path.extend(['d4'])
         c.deadends.extend(['d6'])
         moves = c.get_vertical_moves()
-        self.assertEqual(moves, ['d3', 'd5', 'd7', 'd8'])
+        self.assertEqual(moves, ['d8', 'd7', 'd5', 'd3'])
 
     def testCreateRandomPiece(self):
         pieces = PIECES.keys()
@@ -344,9 +350,9 @@ class TestChessercise(unittest.TestCase):
         board = Board(empty=True)
         piece = piece_factory('rook')
         piece.set_position('a1')
-        self.failUnlessEqual(piece.legal_moves(board), ['a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1'])
+        self.failUnlessEqual(piece.legal_moves(board), ['b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'])
         piece.set_position('d5')
-        self.failUnlessEqual(piece.legal_moves(board), ['d1', 'd2', 'd3', 'd4', 'd6', 'd7', 'd8', 'a5', 'b5', 'c5', 'e5', 'f5', 'g5', 'h5'])
+        self.failUnlessEqual(piece.legal_moves(board), ['a5', 'b5', 'c5', 'e5', 'f5', 'g5', 'h5', 'd1', 'd2', 'd3', 'd4', 'd6', 'd7', 'd8'])
 
 if __name__ == '__main__':
     unittest.main()

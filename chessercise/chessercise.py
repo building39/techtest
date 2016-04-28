@@ -150,6 +150,8 @@ class Chessercise(object):
         else:
             quadrant = 4
             far_pos = 'a1'
+        self.quadrant = quadrant
+        self.far_pos = far_pos
         return (quadrant, far_pos)
 
     def _get_max_horz(self, far_pos):
