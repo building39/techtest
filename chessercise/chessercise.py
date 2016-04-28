@@ -277,27 +277,6 @@ class Chessercise(object):
     def _target_queen(self, quadrant, far_pos):
         print('Queen not implemented')
 
-    def _target_rook_horz(self, moves, far_pos, path):
-        start = 0 if self.quadrant in [1, 3] else len(moves) - 1
-        for i in range(start, (len(moves) - 1) if self.hstep == 1 else 0, self.hstep):
-            if moves[i] == far_pos:
-                return path
-            self.board.set_piece(self.piece, moves[i])
-            vert_moves = self.piece.vertical_moves(self.board)
-            return self._target_rook_vert(vert_moves, far_pos, path)
-
-    def _target_rook_vert(self, moves, far_pos, path):
-        start = 0 if self.quadrant in [1, 2] else len(moves) - 1
-        for i in range(start, (len(moves) - 1) if self.vstep == 1 else 0, self.vstep):
-            if moves[i] == far_pos:
-                return path
-            self.board.set_piece(self.piece, moves[i])
-            path.extend([moves[i]])
-            new_horz = self.piece.horizontal_moves(self.board)
-            if new_horz[-1] == moves[i]:
-                new_horz = new_horz[:-1]
-            return self._target_rook_horz(new_horz, far_pos, path)
-
     def horizontal(self, hmoves):
         self.path.extend([self.cur_pos])
         self.board.set_piece(self.piece, self.cur_pos)
