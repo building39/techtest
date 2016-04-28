@@ -39,6 +39,62 @@ class Chessercise(object):
         self.recursion_depth = 0
         self.max_recursion_depth = 0
 
+    def get_diagonal_moves(self):
+#        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+        (_, right_diag, left_diag) = self.piece.diagonal_moves(self.board)
+        i = 0
+        diags = list([right_diag])
+        diags.extend([left_diag])
+        for d in range(0, 2):
+            moves = diags[d]
+            while(True):
+                if i > len(moves) - 1:
+                    break
+                m = moves[i]
+                if m == self.far_pos:
+                    i += 1
+                    continue
+                if m in self.path:
+                    moves.pop(i)
+                    continue
+                if m in self.deadends:
+                    moves.pop(i)
+                    continue
+                if self.board.board[m]['piece']:
+                    moves.pop(i)
+                    continue
+                row = int(m[1]) - 1
+                if row > 0:
+                    cell = "%c%d" % (m[0], row)
+                    if not self.board.board[cell]['piece']:
+                        i += 1
+                        continue
+                row = int(m[1]) + 1
+                if row < 9:
+                    cell = "%c%d" % (m[0], row)
+                    if not self.board.board[cell]['piece']:
+                        i += 1
+                        continue
+                col = ord(m[0]) - 0x60 - 1
+                if col > 0:
+                    cell = "%c%c" % (chr(col + 0x60), m[1])
+                    if not self.board.board[cell]['piece']:
+                        i += 1
+                        continue
+                col = ord(m[0]) - 0x60 + 1
+                if col < 9:
+                    cell = "%c%c" % (chr(col + 0x60), m[1])
+                    if not self.board.board[cell]['piece']:
+                        i += 1
+                        continue
+                moves.pop(i)  # no vertical moves in this column
+
+        if self.quadrant in [1, 3]:
+            return (sorted(right_diag, reverse=True), sorted(left_diag, reverse=True))
+        else:
+            return (sorted(right_diag), sorted(left_diag))
+
     def get_horizontal_moves(self):
         moves = self.piece.horizontal_moves(self.board)
         i = 0

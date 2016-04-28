@@ -1,10 +1,80 @@
 import unittest
-import sys
 from board import Board, is_odd
 from piece import piece_factory, PIECES
 from chessercise import Chessercise
 
 class TestChessercise(unittest.TestCase):
+
+    def testGetDiagonalMoves(self):
+        # import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        # import pydevd; pydevd.settrace()
+        board = Board(empty=True)
+        piece = piece_factory('rook')
+        opp1 = piece_factory('pawn', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('pawn', color='black')
+        opp4 = piece_factory('pawn', color='black')
+
+        pos = 'a1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
+        c.board.set_piece(opp1, 'd3')
+        (rdiag, ldiag) = c.get_diagonal_moves()
+        moves = rdiag + ldiag
+        self.assertEqual(moves, ['h8', 'g7', 'f6', 'e5', 'd4', 'c3', 'b2'])
+        self.assertEqual(rdiag, ['h8', 'g7', 'f6', 'e5', 'd4', 'c3', 'b2'])
+        self.assertEqual(ldiag, [])
+
+        pos = 'a1'
+        board = Board(empty=True)
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
+        c.board.set_piece(opp1, 'c4')
+        c.board.set_piece(opp2, 'd3')
+        c.board.set_piece(opp3, 'd5')
+        c.board.set_piece(opp4, 'e4')
+        (rdiag, ldiag) = c.get_diagonal_moves()
+        moves = rdiag + ldiag
+        self.assertEqual(moves, ['h8', 'g7', 'f6', 'e5', 'c3', 'b2'])
+        self.assertEqual(moves, ['h8', 'g7', 'f6', 'e5', 'c3', 'b2'])
+        self.assertEqual(ldiag, [])
+
+        pos = 'a8'
+        board = Board(empty=True)
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
+        c.board.set_piece(opp1, 'd4')
+        (rdiag, ldiag) = c.get_diagonal_moves()
+        moves = rdiag + ldiag
+        self.assertEqual(moves, ['h1', 'g2', 'f3', 'e4', 'd5', 'c6', 'b7'])
+        self.assertEqual(rdiag, [])
+        self.assertEqual(ldiag, ['h1', 'g2', 'f3', 'e4', 'd5', 'c6', 'b7'])
+
+        pos = 'a8'
+        board = Board(empty=True)
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
+        c.board.set_piece(opp1, 'e5')
+        (rdiag, ldiag) = c.get_diagonal_moves()
+        moves = rdiag + ldiag
+        self.assertEqual(moves, ['h1', 'g2', 'f3', 'e4', 'd5', 'c6', 'b7'])
+        self.assertEqual(rdiag, [])
+        self.assertEqual(ldiag, ['h1', 'g2', 'f3', 'e4', 'd5', 'c6', 'b7'])
+
+        pos = 'e4'
+        board = Board(empty=True)
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c._get_farthest_tile(pos)
+        (rdiag, ldiag) = c.get_diagonal_moves()
+        moves = rdiag + ldiag
+        self.assertEqual(moves, ['b1', 'c2', 'd3', 'f5', 'g6', 'h7', 'a8', 'b7', 'c6', 'd5', 'f3', 'g2', 'h1'])
+        self.assertEqual(rdiag, ['b1', 'c2', 'd3', 'f5', 'g6', 'h7'])
+        self.assertEqual(ldiag, ['a8', 'b7', 'c6', 'd5', 'f3', 'g2', 'h1'])
 
     def testGetHorizontalMoves(self):
         # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')

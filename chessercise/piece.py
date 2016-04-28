@@ -66,7 +66,7 @@ class Piece(object):
         '''
         self.position = position
 
-    def diagonal_moves(self):
+    def diagonal_moves(self, board):
         '''
         Calculate all possible diagonal moves for this piece
         '''
@@ -74,25 +74,27 @@ class Piece(object):
         position = self.position
         from_col = ord(position[0]) - 0x60
         from_row = int(position[1])
+        ldiag = []
+        rdiag = []
         for move in range(1, 9):
             col = from_col + move
             row = from_row + move
             if col < 9 and col != from_col and row < 9:
-                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+                rdiag.append('%c%d' % (chr(col + 0x60), row))
             col = from_col - move
             row - from_row + move
             if col > 0 and col != from_col and row < 9:
-                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+                ldiag.append('%c%d' % (chr(col + 0x60), row))
             col = from_col + move
             row = from_row - move
             if col < 9 and col != from_col and row > 0:
-                valid_moves.append('%c%d' % (chr(col + 0x60), row))
+                ldiag.append('%c%d' % (chr(col + 0x60), row))
             col = from_col - move
             row = from_row - move
             if col > 0 and col != from_col and row > 0:
-                valid_moves.append('%c%d' % (chr(col + 0x60), row))
-
-        return sorted(valid_moves)
+                rdiag.append('%c%d' % (chr(col + 0x60), row))
+        valid_moves = rdiag + ldiag
+        return (sorted(valid_moves), sorted(rdiag), sorted(ldiag))
 
     def vertical_moves(self, board):
         '''
