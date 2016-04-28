@@ -39,8 +39,6 @@ class TestChessercise(unittest.TestCase):
         self.assertEqual(moves, ['b4', 'c4', 'e4', 'g4'])
 
     def testGetVerticalMoves(self):
-        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        import pydevd; pydevd.settrace()
         board = Board(empty=True)
         piece = piece_factory('rook')
         opp1 = piece_factory('pawn', color='black')
