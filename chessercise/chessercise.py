@@ -11,12 +11,9 @@ import sys
 
 from board import Board
 from piece import PIECES, piece_factory
-from knight_moves import KNIGHT_MOVES
-from docutils.utils.math.math2html import VerticalSpace
 
 VERSION = '1.0.0'
 
-verbose = False
 
 class Chessercise(object):
     '''
@@ -29,15 +26,18 @@ class Chessercise(object):
     _queens = 0
     _kings = 0
 
-    def __init__(self, board, piece, position):
+    def __init__(self, board, piece, position, verbose=False):
         self.board = board
         self.piece = piece
         self.position = position
+        self.verbose = verbose
         self.pieces = PIECES.keys()
         self.deadends = []
         self.path_list = []
         self.path = []
         self.cur_pos = ''
+        self.recursion_depth = 0
+        self.max_recursion_depth = 0
 
     def get_horizontal_moves(self):
         moves = self.piece.horizontal_moves(self.board)
@@ -252,7 +252,7 @@ class Chessercise(object):
         self.vertical()
 
         for h in hmoves:
-            self.path = [h]
+            self.path = [self.orig_pos, h]
             self.cur_pos = h
             self.board.set_piece(self.piece, self.cur_pos)
             self.vertical()
@@ -266,34 +266,42 @@ class Chessercise(object):
     def vertical(self):
         vmoves = self.get_vertical_moves()
         path = []
+        self.recursion_depth += 1
+        self.max_recursion_depth += 1
+        if len(self.path_list) > 50000:
+            return
         for v in vmoves:
             if v in self.path or v in self.deadends:
                 continue
             if v == self.far_pos:  # found the holy grail - do something about it
                 self.path.extend([v])
                 self.path_list.extend([self.path])
+                self.total_paths += 1
                 self.path = []
                 return
             self.cur_pos = v
             self.board.set_piece(self.piece, self.cur_pos)
+            self.path.extend([v])
             hmoves = self.get_horizontal_moves()
             if hmoves:
                 for h in hmoves:
                     if h in self.path or h in self.deadends:
                         continue
-                    if self.cur_pos:
-                        self.path.extend([self.cur_pos])
                     self.cur_pos = h
                     if self.cur_pos == self.far_pos:
                         self.path.extend([self.cur_pos])
                         self.path_list.extend([self.path])
+                        self.total_paths += 1
                         self.path = []
                         return
                     self.path.extend([self.cur_pos])
                     self.board.set_piece(self.piece, self.cur_pos)
                     path = list(self.path)
                     self.vertical()
-                    self.path = path
+                    self.recursion_depth -= 1
+                    path = path[:-1]
+                    self.path = list(path)
+                    break
             else:
                 self.deadends.extend([self.path[-1]])
                 self.path = self.path[:-1]  # remove last path element
@@ -301,8 +309,8 @@ class Chessercise(object):
 
 
     def _target_rook(self):
-        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        import pydevd; pydevd.settrace()
+#        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
 
         if self.quadrant == 1:
             self.hstep = 1
@@ -317,37 +325,12 @@ class Chessercise(object):
             self.hstep = -1
             self.vstep = -1
 
+        self.total_paths = 0
+
         self.cur_pos = self.orig_pos = self.piece.get_position()
         self.horizontal(self.get_horizontal_moves())
 
-        shortest_paths = []
-        min_moves = 0
-        if self.path_list:
-            plist = list(self.path_list)
-            pth = plist.pop(0)
-            min_moves = len(pth)
-            for p in plist:
-                if len(p) < min_moves:
-                    min_moves = len(p)
-            # min_moves now has length of shortest path
-
-            for p in self.path_list:
-                if len(p) == min_moves:
-                    shortest_paths.extend([p])
-
-        if len(shortest_paths) == 0:
-            print('There were no paths to the destination')
-        else:
-            print('Found %d paths to the target' % len(self.path_list))
-            print('List of all paths:')
-            for p in self.path_list:
-                print('    %s' % p)
-            print('Shortest path is %d moves.' % (min_moves - 1))
-            print('Found %s %d %s:' % ('this' if len(shortest_paths) == 1 else 'these',
-                                       len(shortest_paths),
-                                       'path' if len(shortest_paths) == 1 else 'paths'))
-            for mp in shortest_paths:
-                print(mp)
+        return(self.path_list)
 
     def show_moves(self, piece, position):
         '''
@@ -356,13 +339,9 @@ class Chessercise(object):
 
         return piece.legal_moves(self.board)
 
-
-
-
-
     def target(self, piece, position):
-        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        import pydevd; pydevd.settrace()
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
         self.piece = piece
         self.position = position
         self._populate_random(8)
@@ -382,7 +361,7 @@ class Chessercise(object):
         elif self.piece.get_type() == 'queen':
             self._target_queen()
         elif self.piece.get_type() == 'rook':
-            self._target_rook()
+            return self._target_rook()
 
 
 def usage():
@@ -413,6 +392,7 @@ def main(argv):
     in_piece = ''
     in_position = ''
     target = False
+    verbose = False
 
     if (len(argv) < 2):
         print "Number of args: %d" % len(argv)
@@ -423,7 +403,8 @@ def main(argv):
                                     ['help',
                                      'piece=',
                                      'position=',
-                                     'target'])
+                                     'target',
+                                     'verbose'])
     except getopt.GetoptError, e:
         print ('opt error %s' % e)
         print ('')
@@ -438,6 +419,8 @@ def main(argv):
             in_position = arg
         elif opt == '--target':
             target = True
+        elif opt == '--verbose':
+            verbose = True
 
 #    sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #    import pydevd; pydevd.settrace()
@@ -456,9 +439,39 @@ def main(argv):
         print('Failed on position %s' % in_position)
         sys.exit(1)
 
-    obj = Chessercise(board, piece, in_position)
+    obj = Chessercise(board, piece, in_position, verbose)
     if target:
-        obj.target(piece, in_position)
+        path_list = obj.target(piece, in_position)
+        shortest_paths = []
+        min_moves = 0
+        if path_list:
+            plist = list(path_list)
+            pth = plist.pop(0)
+            min_moves = len(pth)
+            for p in plist:
+                if len(p) < min_moves:
+                    min_moves = len(p)
+            # min_moves now has length of shortest path
+
+            for p in path_list:
+                if len(p) == min_moves:
+                    shortest_paths.extend([p])
+        if len(shortest_paths) == 0:
+            print('There were no paths to the destination')
+        else:
+            print('Found %d paths to the target' % len(path_list))
+            if verbose:
+                print('Maximum recursion depth: %d' % obj.max_recursion_depth)
+                print('List of all paths:')
+                for p in path_list:
+                    print('    %s' % p)
+            print('Shortest path is %d moves.' % (min_moves - 1))
+            print('Found %s %d %s:' % ('this' if len(shortest_paths) == 1 else 'these',
+                                       len(shortest_paths),
+                                       'path' if len(shortest_paths) == 1 else 'paths'))
+            for mp in shortest_paths:
+                print(mp)
+
     else:
         moves = obj.show_moves(piece, in_position)
         print moves
