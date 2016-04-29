@@ -299,7 +299,6 @@ class Chessercise(object):
         '''
         return
 
-
     def vertical(self):
         vmoves = self.get_vertical_moves()
         path = []
@@ -348,19 +347,6 @@ class Chessercise(object):
     def _target_rook(self):
 #        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
-
-        if self.quadrant == 1:
-            self.hstep = 1
-            self.vstep = 1
-        elif self.quadrant == 2:
-            self.hstep = -1
-            self.vstep = 1
-        elif self.quadrant == 3:
-            self.hstep = 1
-            self.vstep = -1
-        else:
-            self.hstep = -1
-            self.vstep = -1
 
         self.total_paths = 0
 
