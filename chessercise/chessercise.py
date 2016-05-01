@@ -348,14 +348,13 @@ class Chessercise(object):
         return list([horz, vert])
 
     def _target_rook(self):
-        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        import pydevd; pydevd.settrace()
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
         self.total_paths = 0
         self.cur_pos = self.orig_pos = self.piece.get_position()
 
         self.horizontal()
-        for p in self.path_list:
-            print(p)
+
         return(self.path_list)
 
     def check_cell_occupied(self, cell):
@@ -364,6 +363,16 @@ class Chessercise(object):
                     self.board.board[cell]['piece'].get_color())
         else:
             return None
+
+    def find_opponents(self, start, end, nodes):
+        opponents = []
+        if self.cur_pos in nodes:
+            nodes = nodes.pop(nodes.index(self.cur_pos))
+        for node in nodes:
+            opponent = self.check_cell_occupied(node)
+            if opponent and opponent[1] != self.piece.get_color():
+                opponents.extend([node])
+        return opponents
 
     def horizontal(self):
         path = []
@@ -499,7 +508,7 @@ class Chessercise(object):
         # results in a capture of that piece, removing it from the board. We need to restore
         # the original state of the board after every target path is found.
 
-        self.save_board = dict(self.board)
+        self.save_board = copy.deepcopy(self.board)
 
 
         # compute furthest tile from our piece
