@@ -207,22 +207,24 @@ class TestChessercise(unittest.TestCase):
         pos = 'a1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
-        c.board.set_piece(opp1, 'e5')
-        c.board.set_piece(opp2, 'c8')
-        c.board.set_piece(opp3, 'h8')
-        c.board.set_piece(opp4, 'd4')
-        c.board.set_piece(opp5, 'a7')
-        c.board.set_piece(opp6, 'e3')
-        c.board.set_piece(opp7, 'h5')
-        c.board.set_piece(opp8, 'g6')
+        c.board.set_piece(opp1, 'f6')
+        c.board.set_piece(opp2, 'h7')
+        c.board.set_piece(opp3, 'd2')
+        c.board.set_piece(opp4, 'e7')
+        c.board.set_piece(opp5, 'b8')
+        c.board.set_piece(opp6, 'd3')
+        c.board.set_piece(opp7, 'h3')
+        c.board.set_piece(opp8, 'd8')
         (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
         c.verbose = True
         c.color = piece.get_color()
         c.save_board = copy.deepcopy(board)
         path_list = c._target_rook()
-        self.assertEqual(len(path_list), 354, 'Should have found 354 paths, not %d' % len(path_list))
+        for p in path_list:
+            print p
+        self.assertEqual(len(path_list), 302, 'Should have found 302 paths, not %d' % len(path_list))
         path = [p for p in path_list if len(p) == 4]
-        self.assertEqual(path, [['a1', 'f1', 'f8', 'h8']], "Path should be ['a1', 'f1', 'f8', 'h8'], not %s" % path)
+        self.assertEqual(path, [['a1', 'g1', 'g8', 'h8']], "Path should be ['a1', 'f1', 'f8', 'h8'], not %s" % path)
 
     def testTargetRookFromA8(self):
         board = Board(empty=True)
