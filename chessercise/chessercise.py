@@ -5,6 +5,7 @@ Created on April 22, 2016
 @author: mmartin
 '''
 
+import copy
 import getopt
 import random
 import sys
@@ -13,6 +14,26 @@ from board import Board
 from piece import PIECES, piece_factory
 
 VERSION = '1.0.0'
+
+INCREMENT = [ (),
+              (1, 1),
+              (-1, 1),
+              (1, -1),
+             (-1, -1)
+            ]
+
+def get_next_cell(cell, inc_tuple):
+    row = int(cell[1]) + 1
+    col = ord(cell[0]) + 0x60 + 1
+    if row > 0 and row < 9 and col > 0 and col < 9:
+        return '%c%d' % (chr(col), row)
+    else:
+        return None
+
+def split_list(l, idx):
+    l1 = l[:idx]
+    l2 = l[idx + 1:]
+    return l1 + l2
 
 
 class Chessercise(object):
@@ -38,22 +59,38 @@ class Chessercise(object):
         self.cur_pos = ''
         self.recursion_depth = 0
         self.max_recursion_depth = 0
+        self.shutting_down = False
+        self.min_path_length = 0
 
     def get_diagonal_moves(self):
+        '''
+        Right diagonal proceeds from 'a1' to 'h8' (or a parallel diagonal path).
+        Left diagonal proceeds from 'a8' to 'h1' (or a parallel diagonal path).
+        '''
 #        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
-        (_, right_diag, left_diag) = self.piece.diagonal_moves(self.board)
+        (_, right_diag, left_diag) = self.piece.diagonal_moves()
         i = 0
+        right_diag.extend([self.cur_pos])
+        left_diag.extend([self.cur_pos])
+        right_diag = sorted(right_diag)
+        left_diag = sorted(left_diag)
         diags = list([right_diag])
         diags.extend([left_diag])
         for d in range(0, 2):
             moves = diags[d]
+            i = moves.index(self.cur_pos)
+            inc = 1
             while(True):
-                if i > len(moves) - 1:
+                if i < 0 or i > len(moves) - 1:
                     break
                 m = moves[i]
-                if m == self.far_pos:
-                    i += 1
+                if m == self.cur_pos:
+                    i += inc
+                    continue
+                if m == self.target_node:
+                    inc = -1
+                    i = moves.index(self.cur_pos) - 1
                     continue
                 if m in self.path:
                     moves.pop(i)
@@ -62,38 +99,47 @@ class Chessercise(object):
                     moves.pop(i)
                     continue
                 if self.board.board[m]['piece']:
-                    moves.pop(i)
-                    continue
+                    if inc == 1:
+                        diags[d] = list(moves[:(i - len(moves))])
+                        moves = list(diags[d])
+                        inc = -1
+                        i = moves.index(self.cur_pos)
+                        continue
+                    else:
+                        diags[d] = list(moves[i - len(moves) + 1:])
+                        break
                 row = int(m[1]) - 1
                 if row > 0:
                     cell = "%c%d" % (m[0], row)
                     if not self.board.board[cell]['piece']:
-                        i += 1
+                        i += inc
                         continue
                 row = int(m[1]) + 1
                 if row < 9:
                     cell = "%c%d" % (m[0], row)
                     if not self.board.board[cell]['piece']:
-                        i += 1
+                        i += inc
                         continue
                 col = ord(m[0]) - 0x60 - 1
                 if col > 0:
                     cell = "%c%c" % (chr(col + 0x60), m[1])
                     if not self.board.board[cell]['piece']:
-                        i += 1
+                        i += inc
                         continue
                 col = ord(m[0]) - 0x60 + 1
                 if col < 9:
                     cell = "%c%c" % (chr(col + 0x60), m[1])
                     if not self.board.board[cell]['piece']:
-                        i += 1
+                        i += inc
                         continue
                 moves.pop(i)  # no vertical moves in this column
 
+        right_diag = list(diags[0])
+        left_diag = list(diags[1])
         if self.quadrant in [1, 3]:
-            return (sorted(right_diag, reverse=True), sorted(left_diag, reverse=True))
+            return (sorted(right_diag, reverse=True), sorted(left_diag, reverse=False))
         else:
-            return (sorted(right_diag), sorted(left_diag))
+            return (sorted(right_diag, reverse=False), sorted(left_diag, reverse=True))
 
     def get_horizontal_moves(self):
         moves = self.piece.horizontal_moves(self.board)
@@ -102,7 +148,7 @@ class Chessercise(object):
             if i > len(moves) - 1:
                 break
             m = moves[i]
-            if m == self.far_pos:
+            if m == self.target_node:
                 i += 1
                 continue
             if m in self.path:
@@ -140,7 +186,7 @@ class Chessercise(object):
             if i > len(moves) - 1:
                 break
             m = moves[i]
-            if m == self.far_pos:
+            if m == self.target_node:
                 i += 1
                 continue
             if m in self.path:
@@ -193,27 +239,27 @@ class Chessercise(object):
         row = int(pos[1])
         col = ord(pos[0]) - 0x60
         quadrant = None
-        far_pos = None
+        target = None
         if row < 5 and col < 5:
             quadrant = 1
-            far_pos = 'h8'
+            target = 'h8'
         elif row < 5 and col > 4:
             quadrant = 2
-            far_pos = 'a8'
+            target = 'a8'
         elif row > 4 and col < 5:
             quadrant = 3
-            far_pos = 'h1'
+            target = 'h1'
         else:
             quadrant = 4
-            far_pos = 'a1'
+            target = 'a1'
         self.quadrant = quadrant
-        self.far_pos = far_pos
-        return (quadrant, far_pos)
+        self.target_node = target
+        return (quadrant, target)
 
-    def _get_max_horz(self, far_pos):
+    def _get_max_horz(self, target):
         moves = self.piece.horizontal_moves(self.board)
         move = ''
-        if moves[-1] == far_pos:
+        if moves[-1] == target:
             move = moves[-1]
         else:
             if self.board.board[moves[-1]]['piece']:
@@ -228,10 +274,10 @@ class Chessercise(object):
         else:
             return None
 
-    def _get_max_vert(self, far_pos):
+    def _get_max_vert(self, target):
         moves = self.piece.vertical_moves(self.board)
         move = ''
-        if moves[-1] == far_pos:
+        if moves[-1] == target:
             move = moves[-1]
         else:
             if self.board.board[moves[-1]]['piece']:
@@ -262,98 +308,177 @@ class Chessercise(object):
             self.board.set_piece(piece_factory(new_piece, color='black'), tile)
             print('%s at %s' % (new_piece, tile))
 
-    def _target_bishop(self, quadrant, far_pos):
-        print('Bishop not implemented')
+    def _target_bishop(self):
+        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
+        self.total_paths = 0
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.path.extend([self.cur_pos])
+        # adjust target to match color of tile on which the bishop sits.
+        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
+            row = int(self.target_node[1])
+            if self.quadrant in [1, 2]:
+                self.target_node = '%c%d' % (self.target_node[0], row - 1)
+            else:
+                self.target_node = '%c%d' % (self.target_node[0], row + 1)
+        self.diagonal()
 
-    def _target_king(self, quadrant, far_pos):
+        return(self.path_list)
+
+    def _target_king(self):
         print('King not implemented')
 
-    def _target_knight(self, quadrant, far_pos):
+    def _target_knight(self):
         print('Knight not implemented')
 
-    def _target_pawn(self, quadrant, far_pos):
+    def _target_pawn(self):
         print('Pawn not implemented')
 
-    def _target_queen(self, quadrant, far_pos):
+    def _target_queen(self):
         print('Queen not implemented')
 
-    def horizontal(self, hmoves):
-        self.path.extend([self.cur_pos])
+    def _split_horz_vert(self, moves):
+        horz = []
+        vert = []
+        for m in moves:
+            if m[0] == self.cur_pos[0]:
+                vert.extend([m])
+            else:
+                horz.extend([m])
+        return list([horz, vert])
+
+    def _target_rook(self):
+        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
+        self.total_paths = 0
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+
+        self.horizontal()
+        for p in self.path_list:
+            print(p)
+        return(self.path_list)
+
+    def check_cell_occupied(self, cell):
+        if self.board.board[cell]['piece']:
+            return (self.board.board[cell]['piece'].get_type(),
+                    self.board.board[cell]['piece'].get_color())
+        else:
+            return None
+
+    def horizontal(self):
+        path = []
+        self.save_board = copy.deepcopy(self.board)
+        (_, vert) = self._split_horz_vert(self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)))
+        self.path = list([self.cur_pos])
         self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
 
-        '''
-        Origin position is not in the list of horizontal moves.
-        We process the verticals for this position first, then
-        move on to the remaining horizontals.
-        '''
-        self.vertical()
+        vert.extend([self.cur_pos])
 
-        for h in hmoves:
-            self.path = [self.orig_pos, h]
-            self.cur_pos = h
+        if self.quadrant in [1, 2]:
+            vert = sorted(vert, reverse=True)
+            bias = -1
+        else:
+            vert = sorted(vert)
+            bias = 1
+
+        for v in vert:
+            if v == self.orig_pos:
+                self.path = list([self.orig_pos])
+            else:
+                self.path = list([self.orig_pos, v])
+            path = list(self.path)
+            self.cur_pos = v
             self.board.set_piece(self.piece, self.cur_pos)
-            self.vertical()
+            self.board.visit_node(self.cur_pos)
+            (horz, _) = self._split_horz_vert(self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)))
+            if self.quadrant in [1, 3]:
+                horz = sorted(horz, reverse=True)
+                bias = -1
+            else:
+                horz = sorted(horz)
+                bias = 1
+            hpath = list(self.path)
+            for h in horz:
+                self.path = list(hpath)
+                if h == self.target_node:
+#                    print('Found target %s' % h)
+                    self.path.extend([h])
+                    self.path_list.extend([self.path])
+                    self.board = copy.deepcopy(self.save_board)
+                    break
+    #            print('1. Visited node %s' % h))
+                self.cur_pos = h
+                self.path.extend([self.cur_pos])
+                self.board.set_piece(self.piece, self.cur_pos)
+                self.board.visit_node(self.cur_pos)
+                (_, vert) = self._split_horz_vert(self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)))
+                self.vertical(vert)
 
         '''
         When the above for loop ends, we are done
         '''
         return
 
-    def vertical(self):
-        vmoves = self.get_vertical_moves()
-        path = []
+    def remove_visited_nodes(self, nodes):
+        culled_nodes = []
+        for node in nodes:
+            if not self.board.has_been_visited(node):
+                culled_nodes.extend([node])
+        return culled_nodes
+
+    def vertical(self, vmoves):
+
+        if self.quadrant in [1, 2]:
+            vmoves = sorted(vmoves, reverse=True)
+            bias = -1
+        else:
+            vmoves = sorted(vmoves)
+            bias = 1
+
+        path = list(self.path)
         self.recursion_depth += 1
         self.max_recursion_depth += 1
-        if len(self.path_list) > 50000:
-            return
+
+#        index = vmoves.index(self.cur_pos)
+
+#        print('Vertical moves: %s' % vmoves)
+        vpath = list(self.path)
         for v in vmoves:
-            if v in self.path or v in self.deadends:
-                continue
-            if v == self.far_pos:  # found the holy grail - do something about it
-                self.path.extend([v])
-                self.path_list.extend([self.path])
-                self.total_paths += 1
-                self.path = []
-                return
+            self.path = list(vpath)
+            self.path.extend([v])
+#            if v != self.cur_pos:
+#                print('Visited vertical node %s' % v)
             self.cur_pos = v
             self.board.set_piece(self.piece, self.cur_pos)
-            self.path.extend([v])
-            hmoves = self.get_horizontal_moves()
-            if hmoves:
-                for h in hmoves:
-                    if h in self.path or h in self.deadends:
-                        continue
-                    self.cur_pos = h
-                    if self.cur_pos == self.far_pos:
-                        self.path.extend([self.cur_pos])
-                        self.path_list.extend([self.path])
-                        self.total_paths += 1
-                        self.path = []
-                        return
-                    self.path.extend([self.cur_pos])
-                    self.board.set_piece(self.piece, self.cur_pos)
-                    path = list(self.path)
-                    self.vertical()
-                    self.recursion_depth -= 1
-                    path = path[:-1]
-                    self.path = list(path)
-                    break
+
+            if v == self.target_node:
+                self.path_list.extend([self.path])
+                self.board = copy.deepcopy(self.save_board)
+                return
+            self.board.visit_node(self.cur_pos)
+            (horz, _) = self._split_horz_vert(self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)))
+            if self.quadrant in [1, 3]:
+                horz = sorted(horz, reverse=True)
+                bias = -1
             else:
-                self.deadends.extend([self.path[-1]])
-                self.path = self.path[:-1]  # remove last path element
-                continue
+                horz = sorted(horz)
+                bias = 1
+            hpath = list(self.path)
+            for h in horz:
+                self.path = list(hpath)
+                self.path.extend([h])
+                self.cur_pos = h
+                self.board.set_piece(self.piece, self.cur_pos)
 
-
-    def _target_rook(self):
-#        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
-        self.total_paths = 0
-
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.horizontal(self.get_horizontal_moves())
-
-        return(self.path_list)
+                if h == self.target_node:
+                    self.path_list.extend([self.path])
+                    self.board = copy.deepcopy(self.save_board)
+                    break
+                self.board.visit_node(self.cur_pos)
+                (_, vert) = self._split_horz_vert(self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)))
+                self.vertical(vert)
+                break
 
     def show_moves(self, piece, position):
         '''
@@ -366,12 +491,19 @@ class Chessercise(object):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
         self.piece = piece
+        self.color = piece.get_color()
         self.position = position
         self._populate_random(8)
 
+        # save the board state. Moving a piece onto a tile that has an opponent's piece
+        # results in a capture of that piece, removing it from the board. We need to restore
+        # the original state of the board after every target path is found.
+
+        self.save_board = dict(self.board)
+
 
         # compute furthest tile from our piece
-        (self.quadrant, self.far_pos) = self._get_farthest_tile(self.position)
+        (self.quadrant, self.target_node) = self._get_farthest_tile(self.position)
 
         if self.piece.get_type() == 'bishop':
             self._target_bishop()

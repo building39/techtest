@@ -1,4 +1,5 @@
 import unittest
+import copy
 from board import Board, is_odd
 from piece import piece_factory, PIECES
 from chessercise import Chessercise
@@ -162,6 +163,36 @@ class TestChessercise(unittest.TestCase):
         self.assertTrue(row in range(1, 9))
         self.assertTrue(col in range(1, 9))
 
+    def testTargetBishopFromA1(self):
+        board = Board(empty=True)
+        piece = piece_factory('bishop')
+        opp1 = piece_factory('king', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('knight', color='black')
+        opp4 = piece_factory('pawn', color='black')
+        opp5 = piece_factory('rook', color='black')
+        opp6 = piece_factory('bishop', color='black')
+        opp7 = piece_factory('bishop', color='black')
+        opp8 = piece_factory('rook', color='black')
+        pos = 'a1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'e5')
+        c.board.set_piece(opp2, 'c8')
+        c.board.set_piece(opp3, 'h8')
+        c.board.set_piece(opp4, 'd4')
+        c.board.set_piece(opp5, 'a7')
+        c.board.set_piece(opp6, 'e3')
+        c.board.set_piece(opp7, 'h5')
+        c.board.set_piece(opp8, 'g6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        path_list = c._target_bishop()
+        self.assertEqual(len(path_list), 3, 'Should have found 354 paths, not %d' % len(path_list))
+        path = [p for p in path_list if len(p) == 4]
+        self.assertEqual(path, [['a1', 'f1', 'f8', 'h8']], "Path should be ['a1', 'f1', 'f8', 'h8'], not %s" % path)
+
     def testTargetRookFromA1(self):
         board = Board(empty=True)
         piece = piece_factory('rook')
@@ -186,6 +217,8 @@ class TestChessercise(unittest.TestCase):
         c.board.set_piece(opp8, 'g6')
         (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
         c.verbose = True
+        c.color = piece.get_color()
+        c.save_board = copy.deepcopy(board)
         path_list = c._target_rook()
         self.assertEqual(len(path_list), 354, 'Should have found 354 paths, not %d' % len(path_list))
         path = [p for p in path_list if len(p) == 4]

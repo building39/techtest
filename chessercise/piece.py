@@ -4,7 +4,7 @@ Created on Apr 22, 2016
 @author: mmartin
 '''
 
-from board import COLUMNS, Board
+from board import COLUMNS
 
 
 PIECES = {
@@ -66,11 +66,10 @@ class Piece(object):
         '''
         self.position = position
 
-    def diagonal_moves(self, board):
+    def diagonal_moves(self):
         '''
         Calculate all possible diagonal moves for this piece
         '''
-        valid_moves = []
         position = self.position
         from_col = ord(position[0]) - 0x60
         from_row = int(position[1])
@@ -106,25 +105,11 @@ class Piece(object):
         for move in range(from_row, 9):
             if move != from_row:  # Horizontal moves
                 new_pos = '%c%d' % (position[0], move)
-                if board.board[new_pos]['piece']:
-                    if board.board[new_pos]['piece'].get_color() != self.get_color():
-                        valid_moves.append('%c%d' % (position[0], move))
-                        break
-                    else:
-                        break
-                else:
-                    valid_moves.append(new_pos)
+                valid_moves.append(new_pos)
         for move in range(from_row, 0, -1):
             if move != from_row:  # Horizontal moves
                 new_pos = '%c%d' % (position[0], move)
-                if board.board[new_pos]['piece']:
-                    if board.board[new_pos]['piece'].get_color() != self.get_color():
-                        valid_moves.append('%c%d' % (position[0], move))
-                        break
-                    else:
-                        break
-                else:
-                    valid_moves.append(new_pos)
+                valid_moves.append(new_pos)
         return sorted(valid_moves)
 
     def horizontal_moves(self, board):
@@ -138,25 +123,11 @@ class Piece(object):
         for move in range(from_col, 9):
             if move != from_col:  # Vertical moves
                 new_pos = '%c%d' % (chr(move + 0x60), from_row)
-                if board.board[new_pos]['piece']:
-                    if board.board[new_pos]['piece'].get_color() != self.get_color():
-                        valid_moves.append('%c%c' % (chr(move + 0x60), position[1]))
-                        break
-                    else:
-                        break
-                else:
-                    valid_moves.append(new_pos)
+                valid_moves.append(new_pos)
         for move in range(from_col, 0, -1):
             if move != from_col:  # Vertical moves
                 new_pos = '%c%d' % (chr(move + 0x60), from_row)
-                if board.board[new_pos]['piece']:
-                    if board.board[new_pos]['piece'].get_color() != self.get_color():
-                        valid_moves.append('%c%c' % (chr(move + 0x60), position[1]))
-                        break
-                    else:
-                        break
-                else:
-                    valid_moves.append(new_pos)
+                valid_moves.append(new_pos)
         return sorted(valid_moves)
 
 class King(Piece):
