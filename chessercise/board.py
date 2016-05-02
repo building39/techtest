@@ -65,6 +65,9 @@ class Board(object):
 
         return(ok_move)
 
+    def remove_piece(self, node):
+        self.board[node]['piece'] = None
+
     def set_piece(self, piece, node):
         self.board[node]['piece'] = piece
         if piece.get_position():

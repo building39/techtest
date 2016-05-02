@@ -154,37 +154,69 @@ class TestChessercise(unittest.TestCase):
         col = ord(tile[0]) - 0x60
         self.assertTrue(row in range(1, 9))
         self.assertTrue(col in range(1, 9))
-    '''
-    def testTargetBishopFromA1(self):
+
+    def testTargetBishopFromC1(self):
         board = Board(empty=True)
         piece = piece_factory('bishop')
-        opp1 = piece_factory('king', color='black')
+        opp1 = piece_factory('knight', color='black')
         opp2 = piece_factory('pawn', color='black')
-        opp3 = piece_factory('knight', color='black')
-        opp4 = piece_factory('pawn', color='black')
-        opp5 = piece_factory('rook', color='black')
-        opp6 = piece_factory('bishop', color='black')
-        opp7 = piece_factory('bishop', color='black')
-        opp8 = piece_factory('rook', color='black')
-        pos = 'a1'
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'c1'
         board.set_piece(piece, pos)
         c = Chessercise(board, piece, pos)
-        c.board.set_piece(opp1, 'e5')
-        c.board.set_piece(opp2, 'c8')
-        c.board.set_piece(opp3, 'h8')
-        c.board.set_piece(opp4, 'd4')
-        c.board.set_piece(opp5, 'a7')
-        c.board.set_piece(opp6, 'e3')
-        c.board.set_piece(opp7, 'h5')
-        c.board.set_piece(opp8, 'g6')
+        c.board.set_piece(opp1, 'e4')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'f5')
+        c.board.set_piece(opp7, 'f6')
+        c.board.set_piece(opp8, 'h6')
         (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
         c.verbose = True
         c.color = piece.get_color()
+        c.cur_pos = pos
         path_list = c._target_bishop()
-        self.assertEqual(len(path_list), 3, 'Should have found 354 paths, not %d' % len(path_list))
+        self.assertEqual(len(path_list), 1, 'Should have found 1 path, not %d' % len(path_list))
         path = [p for p in path_list if len(p) == 4]
-        self.assertEqual(path[0], ['a1', 'f1', 'f8', 'h8'], "Path should be ['a1', 'f1', 'f8', 'h8'], not %s" % path[0])
-    '''
+        self.assertEqual(path[0], ['c1', 'h6', 'g7', 'h8'], "Path should be ['c1', 'h6', 'g7', 'h8'], not %s" % path[0])
+
+    def testTargetBishopFromA8(self):
+        board = Board(empty=True)
+        piece = piece_factory('bishop')
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'a8'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'd5')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'f5')
+        c.board.set_piece(opp7, 'f6')
+        c.board.set_piece(opp8, 'h6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        c.cur_pos = pos
+        path_list = c._target_bishop()
+        self.assertEqual(len(path_list), 1, 'Should have found 1 path, not %d' % len(path_list))
+        path = [p for p in path_list if len(p) == 3]
+        self.assertEqual(path[0], ['a8', 'd5', 'h1'], "Path should be ['a8', 'd5', 'h1'], not %s" % path[0])
+
     def testTargetRookFromA1(self):
         board = Board(empty=True)
         piece = piece_factory('rook')
