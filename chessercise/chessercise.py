@@ -136,6 +136,8 @@ class Chessercise(object):
 
         right_diag = list(diags[0])
         left_diag = list(diags[1])
+        right_diag.pop(right_diag.index(self.cur_pos))
+        left_diag.pop(left_diag.index(self.cur_pos))
         if self.quadrant in [1, 3]:
             return (sorted(right_diag, reverse=True), sorted(left_diag, reverse=False))
         else:
