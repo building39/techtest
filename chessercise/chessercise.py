@@ -611,10 +611,7 @@ class Chessercise(object):
                 vnodes = list(vert)
                 if self.cur_pos not in vnodes:
                     vnodes.extend([self.cur_pos])
-                if self.quadrant in [1, 2]:
-                    vnodes = list(vert)
-                else:
-                    vnodes = list(vert)
+                vnodes = list(vert)
                 opponents = self.find_opponents(v, vnodes)
                 self.cur_pos = v
             if v == self.orig_pos:
@@ -669,7 +666,7 @@ class Chessercise(object):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
 
-        self.save_board = copy.deepcopy(self.board)
+        save_board = copy.deepcopy(self.board)
         (_, _, vert, _, _) = moves
         vert = self.remove_visited_nodes(vert)
         self.path = list([self.cur_pos])
@@ -679,67 +676,27 @@ class Chessercise(object):
         vert.extend([self.cur_pos])
 
         if self.quadrant in [1, 2]:
-            vert = sorted(vert, reverse=True)
+            vert = sorted(vert, reverse=False)
         else:
-            vert = sorted(vert)
+            vert = sorted(vert, reverse=True)
 
         for v in vert:
-            self.cur_pos = self.orig_pos
-            if v != self.orig_pos:
-                vnodes = list(vert)
-                if self.cur_pos not in vnodes:
-                    vnodes.extend([self.cur_pos])
-                if self.quadrant in [1, 2]:
-                    vnodes = list(vert)
-                else:
-                    vnodes = list(vert)
-                opponents = self.find_opponents(v, vnodes)
-                self.cur_pos = v
             if v == self.orig_pos:
-                self.path = list([self.orig_pos])
-            else:
-                self.path = list([self.orig_pos])
-                self.path.extend(opponents)
-                self.path.extend([v])
+                continue
+            vnodes = list(vert)
+            if self.cur_pos not in vnodes:
+                vnodes.extend([self.cur_pos])
+            vnodes = list(vert)
+            opponents = self.find_opponents(v, vnodes)
+            self.cur_pos = v
+            self.path = list([self.orig_pos])
+            self.path.extend(opponents)
+            self.path.extend([v])
             self.cur_pos = v
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            (_, horz, _, _, _) = self.show_moves(self.piece, self.cur_pos)
-            horz = self.remove_visited_nodes(horz)
-            if self.quadrant in [1, 3]:
-                horz = sorted(horz, reverse=True)
-            else:
-                horz = sorted(horz)
-            hpath = list(self.path)
-
-            for h in horz:
-                self.path = list(hpath)
-                hnodes = list(horz)
-                if self.cur_pos not in hnodes:
-                    hnodes.extend([self.cur_pos])
-                if self.quadrant in [1, 3]:
-                    hnodes = sorted(hnodes, reverse=True)
-                else:
-                    hnodes = sorted(hnodes)
-                opponents = self.find_opponents(h, hnodes)
-                self.path.extend(opponents)
-                if h == self.target_node:
-                    self.path.extend([h])
-                    if self.path_list:
-                        if len(self.path) < len(self.path_list[0]):
-                            self.path_list = list([self.path])
-                    else:
-                        self.path_list = list([self.path])
-                    self.board = copy.deepcopy(self.save_board)
-                    break
-
-                self.cur_pos = h
-                self.path.extend([self.cur_pos])
-                self.board.set_piece(self.piece, self.cur_pos)
-                self.board.visit_node(self.cur_pos)
-                (_, _, vert2, _, _) = self.show_moves(self.piece, self.cur_pos)
-                vert2 = self.remove_visited_nodes(vert2)
-                self.vertical(vert2)
+            self.bishop_shortest_path(self.show_moves(self.piece, self.cur_pos))
+            self.board = copy.deepcopy(save_board)
 
         return
 
