@@ -246,6 +246,35 @@ class TestChessercise(unittest.TestCase):
                          ['a1', 'c2', 'e3', 'g4', 'h6', 'f7', 'h8'],
                          "Path should be ['a1', 'c2', 'e3', 'g4', 'h6', 'f7', 'h8'], not %s" % path_list[0])
 
+    def testTargetQueenFromC1(self):
+        board = Board(empty=True)
+        piece = piece_factory('queen')
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'c1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'e4')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'f5')
+        c.board.set_piece(opp7, 'f6')
+        c.board.set_piece(opp8, 'h6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        c.cur_pos = pos
+        path_list = c._target_queen()
+        self.assertEqual(path_list[0], ['c1', 'h6', 'g7', 'h8'], "Path should be ['c1', 'h6', 'g7', 'h8'], not %s" % path_list[0])
+
     def testTargetKnightFromA3(self):
         board = Board(empty=True)
         piece = piece_factory('knight')
@@ -521,25 +550,24 @@ class TestChessercise(unittest.TestCase):
         board = Board(empty=True)
         piece = piece_factory('knight')
         piece.set_position('b1')
-        self.failUnlessEqual(piece.legal_moves(board), ['a3', 'c3', 'd2'])
+        self.failUnlessEqual(piece.legal_moves(board)[0], ['a3', 'c3', 'd2'])
         piece.set_position('d5')
-        self.failUnlessEqual(piece.legal_moves(board), ['b4', 'b6', 'c3', 'c7', 'e3', 'e7', 'f4', 'f6'])
+        self.failUnlessEqual(piece.legal_moves(board)[0], ['b4', 'b6', 'c3', 'c7', 'e3', 'e7', 'f4', 'f6'])
 
     def testQueenMoves(self):
         board = Board(empty=True)
         piece = piece_factory('queen')
-        piece.set_position('d1')
-        self.failUnlessEqual(piece.legal_moves(board)[0], ['a4', 'b3', 'c2'])
         piece.set_position('e5')
-        self.failUnlessEqual(piece.legal_moves(board)[0], ['a1', 'b2', 'b8', 'c3', 'c7', 'd4', 'd6', 'f4', 'f6', 'g3', 'g7', 'h2', 'h8'])
+        self.failUnlessEqual(piece.legal_moves(board)[0],
+                             ['a1', 'a5', 'b2', 'b5', 'b8', 'c3', 'c5', 'c7', 'd4', 'd5', 'd6', 'e1', 'e2', 'e3', 'e4', 'e6', 'e7', 'e8', 'f4', 'f5', 'f6', 'g3', 'g5', 'g7', 'h2', 'h5', 'h8'])
 
     def testRookMoves(self):
         board = Board(empty=True)
         piece = piece_factory('rook')
         piece.set_position('a1')
-        self.failUnlessEqual(piece.legal_moves(board), ['b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'])
+        self.failUnlessEqual(piece.legal_moves(board)[0], ['b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'])
         piece.set_position('d5')
-        self.failUnlessEqual(piece.legal_moves(board), ['a5', 'b5', 'c5', 'e5', 'f5', 'g5', 'h5', 'd1', 'd2', 'd3', 'd4', 'd6', 'd7', 'd8'])
+        self.failUnlessEqual(piece.legal_moves(board)[0], ['a5', 'b5', 'c5', 'e5', 'f5', 'g5', 'h5', 'd1', 'd2', 'd3', 'd4', 'd6', 'd7', 'd8'])
 
 if __name__ == '__main__':
     unittest.main()

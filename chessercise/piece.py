@@ -144,10 +144,16 @@ class Queen(Piece):
     '''
 
     def legal_moves(self, board):
-        valid_moves = self.horizontal_moves(board)
-        valid_moves.extend(self.vertical_moves(board))
-        valid_moves.extend(self.diagonal_moves())
-        return sorted(valid_moves)
+        horz = self.horizontal_moves(board)
+        vert = self.vertical_moves(board)
+        (_, rdiag, ldiag) = self.diagonal_moves()
+        allm = horz + vert + rdiag + ldiag
+        horz = sorted(horz)
+        vert = sorted(vert)
+        rdiag = sorted(rdiag)
+        ldiag = sorted(ldiag)
+        allm = sorted(allm)
+        return (allm, horz, vert, rdiag, ldiag)
 
 class Bishop(Piece):
     '''
@@ -155,7 +161,8 @@ class Bishop(Piece):
     '''
 
     def legal_moves(self, board):
-        return self.diagonal_moves()
+        (allm, rdiag, ldiag) = self.diagonal_moves()
+        return (allm, [], [], rdiag, ldiag)
 
 
 class Knight(Piece):
@@ -183,16 +190,17 @@ class Knight(Piece):
             col = chr((from_col + int(move[0]) + 0x60))
             if row in range(1, 9) and col in COLUMNS:
                 valid_moves.append('%c%d' % (col, row))
-        return sorted(valid_moves)
+        return (sorted(valid_moves), [], [], [], [])
 
 class Rook(Piece):
     '''
     A rook piece
     '''
     def legal_moves(self, board):
-        valid_moves = self.horizontal_moves(board)
-        valid_moves.extend(self.vertical_moves(board))
-        return valid_moves
+        horz = self.horizontal_moves(board)
+        vert = self.vertical_moves(board)
+        allm = horz + vert
+        return (allm, horz, vert, [], [])
 
 
 class Pawn(Piece):
