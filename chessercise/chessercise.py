@@ -78,7 +78,7 @@ class Chessercise(object):
         self.path = list([self.cur_pos])
         self.board.set_piece(self.piece, self.cur_pos)
         self.board.visit_node(self.cur_pos)
-        self.diagonal_shortest_path(moves)
+        self.bishop_shortest_path(moves)
 
     def _create_random_piece(self):
         new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
@@ -263,10 +263,12 @@ class Chessercise(object):
         self.rook(self.show_moves(self.piece, self.cur_pos))
         if len(self.path_list[0]) == 2:
             return(self.path_list)  # Shortest possible path
+
         # Now try the bishop moves off of the rook moves
         self.cur_pos = self.orig_pos
         self.board.set_piece(self.piece, self.cur_pos)
         self.board.visit_node(self.cur_pos)
+        self.queen1(self.show_moves(self.piece, self.cur_pos))
 
         return(self.path_list)
 
@@ -275,14 +277,7 @@ class Chessercise(object):
         self.rook(self.show_moves(self.piece, self.cur_pos))
         return(self.path_list)
 
-    def check_cell_occupied(self, cell):
-        if self.board.board[cell]['piece']:
-            return (self.board.board[cell]['piece'].get_type(),
-                    self.board.board[cell]['piece'].get_color())
-        else:
-            return None
-
-    def diagonal_shortest_path(self, moves):
+    def bishop_shortest_path(self, moves):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
         self.recursion_depth += 1
@@ -361,11 +356,18 @@ class Chessercise(object):
                     break
                 self.board.visit_node(self.cur_pos)
                 next_moves = self.show_moves(self.piece, self.cur_pos)
-                self.diagonal_shortest_path(next_moves)
+                self.bishop_shortest_path(next_moves)
                 break
 
         self.recursion_depth -= 1
         return
+
+    def check_cell_occupied(self, cell):
+        if self.board.board[cell]['piece']:
+            return (self.board.board[cell]['piece'].get_type(),
+                    self.board.board[cell]['piece'].get_color())
+        else:
+            return None
 
     def find_opponents(self, end, nodes):
         opponents = []
