@@ -63,6 +63,24 @@ class Chessercise(object):
         self.shutting_down = False
         self.min_path_length = 0
 
+    def _bishop_moves(self):
+        # adjust target to match color of tile on which the bishop sits.
+        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
+            row = int(self.target_node[1])
+            if self.quadrant in [1, 2]:
+                self.target_node = '%c%d' % (self.target_node[0], row - 1)
+            else:
+                self.target_node = '%c%d' % (self.target_node[0], row + 1)
+
+        self.save_board = copy.deepcopy(self.board)
+        (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
+        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+
+        self.path = list([self.cur_pos])
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+        self.diagonal_shortest_path(moves)
+
     def _create_random_piece(self):
         new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
         if new_piece == 'pawn' and self._pawns < 8:
@@ -191,22 +209,9 @@ class Chessercise(object):
 
         self.cur_pos = self.orig_pos = self.piece.get_position()
         self.path.extend([self.cur_pos])
-        # adjust target to match color of tile on which the bishop sits.
-        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
-            row = int(self.target_node[1])
-            if self.quadrant in [1, 2]:
-                self.target_node = '%c%d' % (self.target_node[0], row - 1)
-            else:
-                self.target_node = '%c%d' % (self.target_node[0], row + 1)
 
-        self.save_board = copy.deepcopy(self.board)
-        (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
-        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+        self._bishop_moves()
 
-        self.path = list([self.cur_pos])
-        self.board.set_piece(self.piece, self.cur_pos)
-        self.board.visit_node(self.cur_pos)
-        self.diagonal_shortest_path(moves)
         return(self.path_list)
 
     def _target_king(self):
@@ -243,23 +248,10 @@ class Chessercise(object):
 
         self.cur_pos = self.orig_pos = self.piece.get_position()
         self.path.extend([self.cur_pos])
-        # adjust target to match color of tile on which the bishop sits.
-        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
-            row = int(self.target_node[1])
-            if self.quadrant in [1, 2]:
-                self.target_node = '%c%d' % (self.target_node[0], row - 1)
-            else:
-                self.target_node = '%c%d' % (self.target_node[0], row + 1)
 
-        self.save_board = copy.deepcopy(self.board)
-        (_, horz, vert, right, left) = self.show_moves(self.piece, self.cur_pos)
-        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+        # try the bishop moves first
+        self._bishop_moves()
 
-        self.path = list([self.cur_pos])
-        self.board.set_piece(self.piece, self.cur_pos)
-        self.board.visit_node(self.cur_pos)
-
-        self.diagonal_shortest_path(moves)
         if len(self.path_list[0]) == 1:  # can't get any shorter!
             return(self.path_list)
         if self.orig_pos not in target_path and len(self.path_list[0]) == 2:  # shortest possible path if you
