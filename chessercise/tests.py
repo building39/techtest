@@ -246,6 +246,96 @@ class TestChessercise(unittest.TestCase):
                          ['a1', 'c2', 'e3', 'g4', 'h6', 'f7', 'h8'],
                          "Path should be ['a1', 'c2', 'e3', 'g4', 'h6', 'f7', 'h8'], not %s" % path_list[0])
 
+    def testTargetQueenFromA1NoOpponents(self):
+        board = Board(empty=True)
+        piece = piece_factory('queen')
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'a1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'e4')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'f5')
+        c.board.set_piece(opp7, 'f7')
+        c.board.set_piece(opp8, 'h6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        c.cur_pos = pos
+        path_list = c._target_queen()
+        answer = ['a1', 'h8']
+        self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
+
+    def testTargetQueenFromA1OneOpponent(self):
+        board = Board(empty=True)
+        piece = piece_factory('queen')
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'a1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'e4')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'f5')
+        c.board.set_piece(opp7, 'f6')
+        c.board.set_piece(opp8, 'h6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        c.cur_pos = pos
+        path_list = c._target_queen()
+        answer = ['a1', 'f6', 'h8']
+        self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
+
+    def testTargetQueenFromA1TwoOpponents(self):
+        board = Board(empty=True)
+        piece = piece_factory('queen')
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+        pos = 'a1'
+        board.set_piece(piece, pos)
+        c = Chessercise(board, piece, pos)
+        c.board.set_piece(opp1, 'e4')
+        c.board.set_piece(opp2, 'a6')
+        c.board.set_piece(opp3, 'c8')
+        c.board.set_piece(opp4, 'g3')
+        c.board.set_piece(opp5, 'h5')
+        c.board.set_piece(opp6, 'd4')
+        c.board.set_piece(opp7, 'f6')
+        c.board.set_piece(opp8, 'h6')
+        (c.quadrant, c.far_pos) = c._get_farthest_tile(pos)
+        c.verbose = True
+        c.color = piece.get_color()
+        c.cur_pos = pos
+        path_list = c._target_queen()
+        answer = ['a1', 'f6', 'h8']
+        self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
+
     def testTargetQueenFromC1(self):
         board = Board(empty=True)
         piece = piece_factory('queen')
@@ -273,7 +363,8 @@ class TestChessercise(unittest.TestCase):
         c.color = piece.get_color()
         c.cur_pos = pos
         path_list = c._target_queen()
-        self.assertEqual(path_list[0], ['c1', 'h6', 'g7', 'h8'], "Path should be ['c1', 'h6', 'g7', 'h8'], not %s" % path_list[0])
+        answer = ['c1', 'c8', 'h8']
+        self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
 
     def testTargetKnightFromA3(self):
         board = Board(empty=True)

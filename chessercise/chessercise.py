@@ -238,8 +238,8 @@ class Chessercise(object):
         print('Pawn not implemented')
 
     def _target_queen(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
+        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
 
         target_piece = piece_factory('bishop')  # we're gonna try diagonals first
         self.board.set_piece(target_piece, self.target_node)
@@ -258,15 +258,22 @@ class Chessercise(object):
             return(self.path_list)  # didn't start on the same diagonal
 
         # now try the horizontal and vertical paths
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.horizontal((_, horz, vert, right, left))
+        self.cur_pos = self.orig_pos
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+        self.rook(self.show_moves(self.piece, self.cur_pos))
         if len(self.path_list[0]) == 2:
             return(self.path_list)  # Shortest possible path
+        # Now try the bishop moves off of the rook moves
+        self.cur_pos = self.orig_pos
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+
         return(self.path_list)
 
     def _target_rook(self):
         self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.horizontal(self.show_moves(self.piece, self.cur_pos))
+        self.rook(self.show_moves(self.piece, self.cur_pos))
         return(self.path_list)
 
     def check_cell_occupied(self, cell):
@@ -531,7 +538,54 @@ class Chessercise(object):
         else:
             return sorted(moves)
 
-    def horizontal(self, moves):
+    def knights_shortest_path(self, moves):
+        self.recursion_depth += 1
+        self.max_recursion_depth += 1
+        path = list(self.path)
+        if len(path) < 2:
+            print('bingo')
+        moves = self._knight_sort(moves)
+        my_board = copy.deepcopy(self.board)
+
+        for m in moves:
+            self.path = list(path)
+            try:
+                if path[0] == 'b5' and path[1] == 'c3':
+                    print('bingo')
+            except:
+                pass
+            if self.path_list and len(self.path) >= len(self.path_list[0]):
+                break
+            if m == self.orig_pos:
+                continue
+            self.path.extend([m])
+            self.cur_pos = m
+            print(self.path)
+            if m == self.target_node:
+                if self.path_list:
+                    if len(self.path) < len(self.path_list[0]):
+                        self.path_list = list([self.path])
+                else:
+                    self.path_list = list([self.path])
+                self.board = copy.deepcopy(my_board)
+                return
+            self.board.set_piece(self.piece, self.cur_pos)
+            self.board.visit_node(self.cur_pos)
+            next_moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
+            self.knights_shortest_path(next_moves)
+
+        self.recursion_depth -= 1
+        self.board = copy.deepcopy(my_board)
+        return
+
+    def remove_visited_nodes(self, nodes):
+        culled_nodes = []
+        for node in nodes:
+            if not self.board.has_been_visited(node):
+                culled_nodes.extend([node])
+        return culled_nodes
+
+    def rook(self, moves):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
 
@@ -608,53 +662,6 @@ class Chessercise(object):
                 self.vertical(vert2)
 
         return
-
-    def knights_shortest_path(self, moves):
-        self.recursion_depth += 1
-        self.max_recursion_depth += 1
-        path = list(self.path)
-        if len(path) < 2:
-            print('bingo')
-        moves = self._knight_sort(moves)
-        my_board = copy.deepcopy(self.board)
-
-        for m in moves:
-            self.path = list(path)
-            try:
-                if path[0] == 'b5' and path[1] == 'c3':
-                    print('bingo')
-            except:
-                pass
-            if self.path_list and len(self.path) >= len(self.path_list[0]):
-                break
-            if m == self.orig_pos:
-                continue
-            self.path.extend([m])
-            self.cur_pos = m
-            print(self.path)
-            if m == self.target_node:
-                if self.path_list:
-                    if len(self.path) < len(self.path_list[0]):
-                        self.path_list = list([self.path])
-                else:
-                    self.path_list = list([self.path])
-                self.board = copy.deepcopy(my_board)
-                return
-            self.board.set_piece(self.piece, self.cur_pos)
-            self.board.visit_node(self.cur_pos)
-            next_moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
-            self.knights_shortest_path(next_moves)
-
-        self.recursion_depth -= 1
-        self.board = copy.deepcopy(my_board)
-        return
-
-    def remove_visited_nodes(self, nodes):
-        culled_nodes = []
-        for node in nodes:
-            if not self.board.has_been_visited(node):
-                culled_nodes.extend([node])
-        return culled_nodes
 
     def show_moves(self, piece, position):
         '''
