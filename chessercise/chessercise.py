@@ -48,12 +48,13 @@ class Chessercise(object):
     _queens = 0
     _kings = 0
 
-    def __init__(self, board, piece, position, verbose=False):
+    def __init__(self, board, piece, position, num_opponents=8, verbose=False):
         self.board = board
         self.piece = piece
         self.position = position
         self.verbose = verbose
         self.pieces = PIECES.keys()
+        self.num_opponents = num_opponents
         self.deadends = []
         self.path_list = []
         self.path = []
@@ -370,6 +371,9 @@ class Chessercise(object):
 
         self.recursion_depth -= 1
         return
+
+    def capture(self):
+        pass
 
     def check_cell_occupied(self, cell):
         if self.board.board[cell]['piece']:
@@ -939,10 +943,8 @@ class Chessercise(object):
         return sorted(nodes, reverse=reverse)
 
     def target(self, piece, position):
-        self.piece = piece
         self.color = piece.get_color()
-        self.position = position
-        self._populate_random(8)
+        self._populate_random(self.num_opponents)
 
         # save the board state. Moving a piece onto a tile that has an opponent's piece
         # results in a capture of that piece, removing it from the board. We need to restore
@@ -1053,7 +1055,10 @@ def usage():
            '%s <options>' % sys.argv[0])
     print ('')
     print (' Command Line options:')
+    print ('  --capture   - Compute minimum set of moves to capture all pieces on the board.')
     print ('  --help      - Print this enlightening message')
+    print ('  --numpieces - Generate "numpieces" number of opponent pieces at random locations on the board.')
+    print ('                Defaults to eight.')
     print ('  --piece     - Chess piece name. one of "King", "Queen", "Bishop", "Knight", "Rook", or "Pawn".')
     print ('                Case insensitive.')
     print ('  --position  - Board position in standard notation.')
@@ -1067,8 +1072,10 @@ def main(argv):
     Main entry point
     '''
 
+    capture = False
     in_piece = ''
     in_position = ''
+    num_opponents = 8
     target = False
     verbose = False
 
@@ -1078,7 +1085,9 @@ def main(argv):
 
     try:
         opts, _args = getopt.getopt(argv, '',
-                                    ['help',
+                                    ['capture',
+                                     'help',
+                                     'numpieces=',
                                      'piece=',
                                      'position=',
                                      'target',
@@ -1089,8 +1098,12 @@ def main(argv):
         usage()
 
     for opt, arg in opts:
+        if opt == '--capture':
+            capture = True
         if opt in ("-h", "--help"):
             usage()
+        if opt == 'numpieces':
+            num_opponents = arg
         elif opt == '--piece':
             in_piece = arg.lower()
         elif opt == '--position':
@@ -1102,6 +1115,10 @@ def main(argv):
 
 #    sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #    import pydevd; pydevd.settrace()
+
+    if target and capture:
+        print('--capture and --target are mutually exclusive')
+        usage()
 
     if in_piece in PIECES:
         piece = piece_factory(in_piece)
@@ -1117,9 +1134,12 @@ def main(argv):
         print('Failed on position %s' % in_position)
         sys.exit(1)
 
-    obj = Chessercise(board, piece, in_position, verbose)
-    if target:
-        path_list = obj.target(piece, in_position)
+    obj = Chessercise(board, piece, in_position, num_opponents=num_opponents, verbose=verbose)
+    if capture:
+        path_list = obj.capture()
+        print(path_list)
+    elif target:
+        path_list = obj.target()
         shortest_paths = []
         min_moves = 0
         if path_list:
