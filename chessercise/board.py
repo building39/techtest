@@ -35,22 +35,8 @@ class Board(object):
             pass
         # print self.board
 
-    def visit_node(self, node):
-        self.board[node]['visited'] = True
-
     def has_been_visited(self, node):
         return self.board[node]['visited']
-
-    def is_valid_position(self, node):
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
-        col = node[0]
-        row = node[1]
-        if (int(row) in range(1, 9)) and (ord(col) in range(ord('a'), ord('i'))):
-            return True  # Position is OK
-        else:
-            print('Error: position %s is off the board' % node)
-            return False
 
     def is_valid_move(self, from_node, to_node):
         ok_move = True
@@ -65,6 +51,17 @@ class Board(object):
 
         return(ok_move)
 
+    def is_valid_position(self, node):
+        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        # import pydevd; pydevd.settrace()
+        col = node[0]
+        row = node[1]
+        if (int(row) in range(1, 9)) and (ord(col) in range(ord('a'), ord('i'))):
+            return True  # Position is OK
+        else:
+            print('Error: position %s is off the board' % node)
+            return False
+
     def remove_piece(self, node):
         self.board[node]['piece'] = None
 
@@ -73,3 +70,6 @@ class Board(object):
         if piece.get_position():
             self.board[piece.get_position()]['piece'] = None
         piece.set_position(node)
+
+    def visit_node(self, node):
+        self.board[node]['visited'] = True
