@@ -63,6 +63,326 @@ class Chessercise(object):
         self.shutting_down = False
         self.min_path_length = 0
 
+    def _create_random_piece(self):
+        new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
+        if new_piece == 'pawn' and self._pawns < 8:
+            self._pawns += 1
+        elif new_piece == 'rook' and self._rooks < 2:
+            self._rooks += 1
+        elif new_piece == 'knight' and self._knights < 2:
+            self._knights += 1
+        elif new_piece == 'bishop' and self._bishops < 2:
+            self._bishops += 1
+        elif new_piece == 'queen' and self._queens < 1:
+            self._queens += 1
+        elif new_piece == 'king' and self._kings < 1:
+            self._kings += 1
+        else:
+            return self._create_random_piece()
+        return new_piece
+
+    def _get_farthest_tile(self, pos):
+
+        row = int(pos[1])
+        col = ord(pos[0]) - 0x60
+        quadrant = None
+        target = None
+        if row < 5 and col < 5:
+            quadrant = 1
+            target = 'h8'
+        elif row < 5 and col > 4:
+            quadrant = 2
+            target = 'a8'
+        elif row > 4 and col < 5:
+            quadrant = 3
+            target = 'h1'
+        else:
+            quadrant = 4
+            target = 'a1'
+        self.quadrant = quadrant
+        self.target_node = target
+        return (quadrant, target)
+
+    def _get_max_horz(self, target):
+        moves = self.piece.horizontal_moves(self.board)
+        move = ''
+        if moves[-1] == target:
+            move = moves[-1]
+        else:
+            if self.board.board[moves[-1]]['piece']:
+                if len(moves) > 1:
+                    move = moves[-2]
+                else:
+                    return None
+            else:
+                move = moves[-1]
+        if move > self.piece.get_position():
+            return move
+        else:
+            return None
+
+    def _get_max_vert(self, target):
+        moves = self.piece.vertical_moves(self.board)
+        move = ''
+        if moves[-1] == target:
+            move = moves[-1]
+        else:
+            if self.board.board[moves[-1]]['piece']:
+                if len(moves) > 1:
+                    move = moves[-2]
+                else:
+                    return None
+            else:
+                move = moves[-1]
+        if move > self.piece.get_position():
+            return move
+        else:
+            return None
+
+    def _get_random_tile(self):
+        row = random.randint(1, 8)
+        col = random.randint(1, 8)
+        if self.board.board['%c%d' % (chr(col + 0x60), row)]['piece']:  # already occupied?
+            return self._get_random_tile()
+        else:
+            return '%c%d' % (chr(col + 0x60), row)
+
+    def _knight_sort(self, moves):
+        alist = []
+        final_list = []
+
+        if self.quadrant in [1, 3]:
+            sort_columns_reverse = True
+        else:
+            sort_columns_reverse = False
+
+        if self.quadrant in [1, 2]:
+            sort_rows_reverse = True
+        else:
+            sort_rows_reverse = False
+
+        for i in range(0, 8):
+            alist.extend([[]])
+
+        for i in range(0, len(moves)):
+            x = ord(moves[i][0]) - 0x60
+            alist[x - 1].extend([moves[i]])
+
+        alist = sorted(alist, reverse=sort_columns_reverse)
+
+        for l in alist:
+            l = sorted(l, reverse=sort_rows_reverse)
+            for e in l:
+                final_list.extend([e])
+
+        return final_list
+
+    def _populate_random(self, num):
+        random.seed()
+        for _i in range(1, num + 1):
+            tile = self._get_random_tile()
+            new_piece = self._create_random_piece()
+            self.board.set_piece(piece_factory(new_piece, color='black'), tile)
+            print('%s at %s' % (new_piece, tile))
+
+    def _target_bishop(self):
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.path.extend([self.cur_pos])
+        # adjust target to match color of tile on which the bishop sits.
+        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
+            row = int(self.target_node[1])
+            if self.quadrant in [1, 2]:
+                self.target_node = '%c%d' % (self.target_node[0], row - 1)
+            else:
+                self.target_node = '%c%d' % (self.target_node[0], row + 1)
+
+        self.save_board = copy.deepcopy(self.board)
+        (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
+        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+
+        self.path = list([self.cur_pos])
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+        self.diagonal_shortest_path(moves)
+        return(self.path_list)
+
+    def _target_king(self):
+        print('King not implemented')
+
+    def _target_knight(self):
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.path.extend([self.cur_pos])
+
+        self.save_board = copy.deepcopy(self.board)
+
+        moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
+
+        self.path = list([self.cur_pos])
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+        self.knights_shortest_path(moves)
+        return(self.path_list)
+
+    def _target_pawn(self):
+        print('Pawn not implemented')
+
+    def _target_queen(self):
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+
+        target_piece = piece_factory('bishop')  # we're gonna try diagonals first
+        self.board.set_piece(target_piece, self.target_node)
+        target_path = self.show_moves(self.piece, self.target_node)[0]
+        self.board.remove_piece(self.target_node)
+
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.path.extend([self.cur_pos])
+        # adjust target to match color of tile on which the bishop sits.
+        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
+            row = int(self.target_node[1])
+            if self.quadrant in [1, 2]:
+                self.target_node = '%c%d' % (self.target_node[0], row - 1)
+            else:
+                self.target_node = '%c%d' % (self.target_node[0], row + 1)
+
+        self.save_board = copy.deepcopy(self.board)
+        (_, horz, vert, right, left) = self.show_moves(self.piece, self.cur_pos)
+        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+
+        self.path = list([self.cur_pos])
+        self.board.set_piece(self.piece, self.cur_pos)
+        self.board.visit_node(self.cur_pos)
+
+        self.diagonal_shortest_path(moves)
+        if len(self.path_list[0]) == 1:  # can't get any shorter!
+            return(self.path_list)
+        if self.orig_pos not in target_path and len(self.path_list[0]) == 2:  # shortest possible path if you
+            return(self.path_list)  # didn't start on the same diagonal
+
+        # now try the horizontal and vertical paths
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.horizontal((_, horz, vert, right, left))
+        if len(self.path_list[0]) == 2:
+            return(self.path_list)  # Shortest possible path
+        return(self.path_list)
+
+    def _target_rook(self):
+        self.cur_pos = self.orig_pos = self.piece.get_position()
+        self.horizontal(self.show_moves(self.piece, self.cur_pos))
+        return(self.path_list)
+
+    def check_cell_occupied(self, cell):
+        if self.board.board[cell]['piece']:
+            return (self.board.board[cell]['piece'].get_type(),
+                    self.board.board[cell]['piece'].get_color())
+        else:
+            return None
+
+    def diagonal_shortest_path(self, moves):
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+        self.recursion_depth += 1
+        self.max_recursion_depth += 1
+        path = list(self.path)
+        (rpath, lpath) = moves
+        rpath = self.sort_nodes(rpath)
+        lpath = self.sort_nodes(lpath)
+        sys.stdout.flush()
+        if self.quadrant in [1, 4]:
+            primary_path = list(rpath)
+        else:
+            primary_path = list(lpath)
+
+        if self.quadrant in [1, 3]:
+            primary_path = sorted(primary_path, reverse=True)
+        else:
+            primary_path = sorted(primary_path, reverse=False)
+
+        for p in primary_path:
+            self.path = list(path)
+            if p == self.orig_pos:
+                continue
+            nodes = list(primary_path)
+            if self.cur_pos not in nodes:
+                nodes.extend([self.cur_pos])
+                if self.quadrant in [1, 3]:
+                    nodes = sorted(nodes, reverse=True)
+                else:
+                    nodes = sorted(nodes, reverse=False)
+            opponents = self.find_opponents(p, nodes)
+            self.path.extend(opponents)
+            self.path.extend([p])
+            self.cur_pos = p
+            if p == self.target_node:
+                if self.path_list:
+                    if len(self.path) < len(self.path_list[0]):
+                        self.path_list = list([self.path])
+                else:
+                    self.path_list = list([self.path])
+                self.board = copy.deepcopy(self.save_board)
+                return
+            self.cur_pos = p
+            self.board.set_piece(self.piece, self.cur_pos)
+            self.board.visit_node(self.cur_pos)
+            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.piece, self.cur_pos)
+            secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
+            secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
+            if self.quadrant in [1, 3]:
+                secondary_path = list(secondary_lpath)
+            else:
+                secondary_path = list(secondary_rpath)
+            sec_path = list(self.path)
+            for s in secondary_path:
+                if self.path_list and len(self.path) >= len(self.path_list[0]):
+                    break
+                sec_nodes = list(secondary_path)
+                if self.cur_pos not in sec_nodes:
+                    sec_nodes.extend([self.cur_pos])
+                if self.quadrant in [1, 3]:
+                    sec_nodes = sorted(sec_nodes, reverse=True)
+                else:
+                    secondary_path = sorted(secondary_path)
+                opponents = self.find_opponents(s, sec_nodes)
+                self.path = list(sec_path)
+                self.path.extend(opponents)
+                self.path.extend([s])
+                self.cur_pos = s
+                self.board.set_piece(self.piece, self.cur_pos)
+
+                if s == self.target_node:
+                    self.path_list.extend([self.path])
+                    self.board = copy.deepcopy(self.save_board)
+                    break
+                self.board.visit_node(self.cur_pos)
+                (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
+                next_moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
+                self.diagonal_shortest_path(next_moves)
+                break
+
+        self.recursion_depth -= 1
+        return
+
+    def find_opponents(self, end, nodes):
+        opponents = []
+        bias = 1
+        if self.cur_pos not in nodes:
+            nodes.extend([self.cur_pos])
+        sindex = nodes.index(self.cur_pos)
+        findex = nodes.index(end)
+        if findex < sindex:
+            bias = -1
+        for i in range(sindex, findex, bias):
+            opponent = self.check_cell_occupied(nodes[i])
+            if opponent and opponent[1] != self.piece.get_color():
+                opponents.extend([nodes[i]])
+        return opponents
+
     def get_diagonal_moves(self):
         '''
         Right diagonal proceeds from 'a1' to 'h8' (or a parallel diagonal path).
@@ -219,306 +539,6 @@ class Chessercise(object):
         else:
             return sorted(moves)
 
-    def _create_random_piece(self):
-        new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
-        if new_piece == 'pawn' and self._pawns < 8:
-            self._pawns += 1
-        elif new_piece == 'rook' and self._rooks < 2:
-            self._rooks += 1
-        elif new_piece == 'knight' and self._knights < 2:
-            self._knights += 1
-        elif new_piece == 'bishop' and self._bishops < 2:
-            self._bishops += 1
-        elif new_piece == 'queen' and self._queens < 1:
-            self._queens += 1
-        elif new_piece == 'king' and self._kings < 1:
-            self._kings += 1
-        else:
-            return self._create_random_piece()
-        return new_piece
-
-    def _get_farthest_tile(self, pos):
-
-        row = int(pos[1])
-        col = ord(pos[0]) - 0x60
-        quadrant = None
-        target = None
-        if row < 5 and col < 5:
-            quadrant = 1
-            target = 'h8'
-        elif row < 5 and col > 4:
-            quadrant = 2
-            target = 'a8'
-        elif row > 4 and col < 5:
-            quadrant = 3
-            target = 'h1'
-        else:
-            quadrant = 4
-            target = 'a1'
-        self.quadrant = quadrant
-        self.target_node = target
-        return (quadrant, target)
-
-    def _get_max_horz(self, target):
-        moves = self.piece.horizontal_moves(self.board)
-        move = ''
-        if moves[-1] == target:
-            move = moves[-1]
-        else:
-            if self.board.board[moves[-1]]['piece']:
-                if len(moves) > 1:
-                    move = moves[-2]
-                else:
-                    return None
-            else:
-                move = moves[-1]
-        if move > self.piece.get_position():
-            return move
-        else:
-            return None
-
-    def _get_max_vert(self, target):
-        moves = self.piece.vertical_moves(self.board)
-        move = ''
-        if moves[-1] == target:
-            move = moves[-1]
-        else:
-            if self.board.board[moves[-1]]['piece']:
-                if len(moves) > 1:
-                    move = moves[-2]
-                else:
-                    return None
-            else:
-                move = moves[-1]
-        if move > self.piece.get_position():
-            return move
-        else:
-            return None
-
-    def _get_random_tile(self):
-        row = random.randint(1, 8)
-        col = random.randint(1, 8)
-        if self.board.board['%c%d' % (chr(col + 0x60), row)]['piece']:  # already occupied?
-            return self._get_random_tile()
-        else:
-            return '%c%d' % (chr(col + 0x60), row)
-
-    def _populate_random(self, num):
-        random.seed()
-        for _i in range(1, num + 1):
-            tile = self._get_random_tile()
-            new_piece = self._create_random_piece()
-            self.board.set_piece(piece_factory(new_piece, color='black'), tile)
-            print('%s at %s' % (new_piece, tile))
-
-    def _target_bishop(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.path.extend([self.cur_pos])
-        # adjust target to match color of tile on which the bishop sits.
-        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
-            row = int(self.target_node[1])
-            if self.quadrant in [1, 2]:
-                self.target_node = '%c%d' % (self.target_node[0], row - 1)
-            else:
-                self.target_node = '%c%d' % (self.target_node[0], row + 1)
-
-        self.save_board = copy.deepcopy(self.board)
-        (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
-        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
-
-        self.path = list([self.cur_pos])
-        self.board.set_piece(self.piece, self.cur_pos)
-        self.board.visit_node(self.cur_pos)
-        self.diagonal_shortest_path(moves)
-        return(self.path_list)
-
-    def _target_king(self):
-        print('King not implemented')
-
-    def _target_knight(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.path.extend([self.cur_pos])
-
-        self.save_board = copy.deepcopy(self.board)
-
-        moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
-
-        self.path = list([self.cur_pos])
-        self.board.set_piece(self.piece, self.cur_pos)
-        self.board.visit_node(self.cur_pos)
-        self.knights_shortest_path(moves)
-        return(self.path_list)
-
-    def _target_pawn(self):
-        print('Pawn not implemented')
-
-    def _target_queen(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
-        target_piece = piece_factory('bishop')  # we're gonna try diagonals first
-        self.board.set_piece(target_piece, self.target_node)
-        target_path = self.show_moves(self.piece, self.target_node)[0]
-        self.board.remove_piece(self.target_node)
-
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.path.extend([self.cur_pos])
-        # adjust target to match color of tile on which the bishop sits.
-        if self.board.board[self.target_node]['color'] != self.board.board[self.orig_pos]['color']:
-            row = int(self.target_node[1])
-            if self.quadrant in [1, 2]:
-                self.target_node = '%c%d' % (self.target_node[0], row - 1)
-            else:
-                self.target_node = '%c%d' % (self.target_node[0], row + 1)
-
-        self.save_board = copy.deepcopy(self.board)
-        (_, horz, vert, right, left) = self.show_moves(self.piece, self.cur_pos)
-        moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
-
-        self.path = list([self.cur_pos])
-        self.board.set_piece(self.piece, self.cur_pos)
-        self.board.visit_node(self.cur_pos)
-
-        self.diagonal_shortest_path(moves)
-        if len(self.path_list[0]) == 1:  # can't get any shorter!
-            return(self.path_list)
-        if self.orig_pos not in target_path and len(self.path_list[0]) == 2:  # shortest possible path if you
-            return(self.path_list)  # didn't start on the same diagonal
-
-        # now try the horizontal and vertical paths
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.horizontal((_, horz, vert, right, left))
-        if len(self.path_list[0]) == 2:
-            return(self.path_list)  # Shortest possible path
-        return(self.path_list)
-
-    def _split_horz_vert(self, moves):
-        horz = []
-        vert = []
-        for m in moves:
-            if m[0] == self.cur_pos[0]:
-                vert.extend([m])
-            else:
-                horz.extend([m])
-        return list([horz, vert])
-
-    def _target_rook(self):
-        self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.horizontal(self.show_moves(self.piece, self.cur_pos))
-        return(self.path_list)
-
-    def check_cell_occupied(self, cell):
-        if self.board.board[cell]['piece']:
-            return (self.board.board[cell]['piece'].get_type(),
-                    self.board.board[cell]['piece'].get_color())
-        else:
-            return None
-
-    def diagonal_shortest_path(self, moves):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-        self.recursion_depth += 1
-        self.max_recursion_depth += 1
-        path = list(self.path)
-        (rpath, lpath) = moves
-        rpath = self.sort_nodes(rpath)
-        lpath = self.sort_nodes(lpath)
-        sys.stdout.flush()
-        if self.quadrant in [1, 4]:
-            primary_path = list(rpath)
-        else:
-            primary_path = list(lpath)
-
-        if self.quadrant in [1, 3]:
-            primary_path = sorted(primary_path, reverse=True)
-        else:
-            primary_path = sorted(primary_path, reverse=False)
-
-        for p in primary_path:
-            self.path = list(path)
-            if p == self.orig_pos:
-                continue
-            nodes = list(primary_path)
-            if self.cur_pos not in nodes:
-                nodes.extend([self.cur_pos])
-                if self.quadrant in [1, 3]:
-                    nodes = sorted(nodes, reverse=True)
-                else:
-                    nodes = sorted(nodes, reverse=False)
-            opponents = self.find_opponents(p, nodes)
-            self.path.extend(opponents)
-            self.path.extend([p])
-            self.cur_pos = p
-            if p == self.target_node:
-                if self.path_list:
-                    if len(self.path) < len(self.path_list[0]):
-                        self.path_list = list([self.path])
-                else:
-                    self.path_list = list([self.path])
-                self.board = copy.deepcopy(self.save_board)
-                return
-            self.cur_pos = p
-            self.board.set_piece(self.piece, self.cur_pos)
-            self.board.visit_node(self.cur_pos)
-            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.piece, self.cur_pos)
-            secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
-            secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
-            if self.quadrant in [1, 3]:
-                secondary_path = list(secondary_lpath)
-            else:
-                secondary_path = list(secondary_rpath)
-            sec_path = list(self.path)
-            for s in secondary_path:
-                if self.path_list and len(self.path) >= len(self.path_list[0]):
-                    break
-                sec_nodes = list(secondary_path)
-                if self.cur_pos not in sec_nodes:
-                    sec_nodes.extend([self.cur_pos])
-                if self.quadrant in [1, 3]:
-                    sec_nodes = sorted(sec_nodes, reverse=True)
-                else:
-                    secondary_path = sorted(secondary_path)
-                opponents = self.find_opponents(s, sec_nodes)
-                self.path = list(sec_path)
-                self.path.extend(opponents)
-                self.path.extend([s])
-                self.cur_pos = s
-                self.board.set_piece(self.piece, self.cur_pos)
-
-                if s == self.target_node:
-                    self.path_list.extend([self.path])
-                    self.board = copy.deepcopy(self.save_board)
-                    break
-                self.board.visit_node(self.cur_pos)
-                (_, _, _, right, left) = self.show_moves(self.piece, self.cur_pos)
-                next_moves = (self.remove_visited_nodes(right), self.remove_visited_nodes(left))
-                self.diagonal_shortest_path(next_moves)
-                break
-
-        self.recursion_depth -= 1
-        return
-
-    def find_opponents(self, end, nodes):
-        opponents = []
-        bias = 1
-        if self.cur_pos not in nodes:
-            nodes.extend([self.cur_pos])
-        sindex = nodes.index(self.cur_pos)
-        findex = nodes.index(end)
-        if findex < sindex:
-            bias = -1
-        for i in range(sindex, findex, bias):
-            opponent = self.check_cell_occupied(nodes[i])
-            if opponent and opponent[1] != self.piece.get_color():
-                opponents.extend([nodes[i]])
-        return opponents
-
     def horizontal(self, moves):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
@@ -637,44 +657,19 @@ class Chessercise(object):
         self.board = copy.deepcopy(my_board)
         return
 
-    def _knight_sort(self, moves):
-        alist = []
-        final_list = []
-
-        if self.quadrant in [1, 3]:
-            sort_columns_reverse = True
-        else:
-            sort_columns_reverse = False
-
-        if self.quadrant in [1, 2]:
-            sort_rows_reverse = True
-        else:
-            sort_rows_reverse = False
-
-        for i in range(0, 8):
-            alist.extend([[]])
-
-        for i in range(0, len(moves)):
-            x = ord(moves[i][0]) - 0x60
-            alist[x - 1].extend([moves[i]])
-
-        alist = sorted(alist, reverse=sort_columns_reverse)
-
-        for l in alist:
-            l = sorted(l, reverse=sort_rows_reverse)
-            for e in l:
-                final_list.extend([e])
-
-
-        return final_list
-
-
     def remove_visited_nodes(self, nodes):
         culled_nodes = []
         for node in nodes:
             if not self.board.has_been_visited(node):
                 culled_nodes.extend([node])
         return culled_nodes
+
+    def show_moves(self, piece, position):
+        '''
+        Show all possible moves for this piece, from this position.
+        '''
+
+        return piece.legal_moves(self.board)
 
     def sort_nodes(self, nodes):
         reverse = False
@@ -683,6 +678,35 @@ class Chessercise(object):
         elif self.quadrant in [2, 4]:
             reverse = False
         return sorted(nodes, reverse=reverse)
+
+    def target(self, piece, position):
+        self.piece = piece
+        self.color = piece.get_color()
+        self.position = position
+        self._populate_random(8)
+
+        # save the board state. Moving a piece onto a tile that has an opponent's piece
+        # results in a capture of that piece, removing it from the board. We need to restore
+        # the original state of the board after every target path is found.
+
+        self.save_board = copy.deepcopy(self.board)
+
+
+        # compute furthest tile from our piece
+        (self.quadrant, self.target_node) = self._get_farthest_tile(self.position)
+
+        if self.piece.get_type() == 'bishop':
+            return self._target_bishop()
+        elif self.piece.get_type() == 'king':
+            return self._target_king()
+        elif self.piece.get_type() == 'knight':
+            return self._target_knight()
+        elif self.piece.get_type() == 'pawn':
+            return  self._target_pawn()
+        elif self.piece.get_type() == 'queen':
+            return self._target_queen()
+        elif self.piece.get_type() == 'rook':
+            return self._target_rook()
 
     def vertical(self, vmoves):
 
@@ -757,42 +781,6 @@ class Chessercise(object):
                 break
 
         self.recursion_depth -= 1
-
-    def show_moves(self, piece, position):
-        '''
-        Show all possible moves for this piece, from this position.
-        '''
-
-        return piece.legal_moves(self.board)
-
-    def target(self, piece, position):
-        self.piece = piece
-        self.color = piece.get_color()
-        self.position = position
-        self._populate_random(8)
-
-        # save the board state. Moving a piece onto a tile that has an opponent's piece
-        # results in a capture of that piece, removing it from the board. We need to restore
-        # the original state of the board after every target path is found.
-
-        self.save_board = copy.deepcopy(self.board)
-
-
-        # compute furthest tile from our piece
-        (self.quadrant, self.target_node) = self._get_farthest_tile(self.position)
-
-        if self.piece.get_type() == 'bishop':
-            return self._target_bishop()
-        elif self.piece.get_type() == 'king':
-            return self._target_king()
-        elif self.piece.get_type() == 'knight':
-            return self._target_knight()
-        elif self.piece.get_type() == 'pawn':
-            return  self._target_pawn()
-        elif self.piece.get_type() == 'queen':
-            return self._target_queen()
-        elif self.piece.get_type() == 'rook':
-            return self._target_rook()
 
 
 def usage():
