@@ -3,18 +3,8 @@ Created on Apr 22, 2016
 
 @author: mmartin
 '''
+from statics import COLUMNS
 
-from board import COLUMNS
-
-
-PIECES = {
-    'bishop': 'B',
-    'knight': 'Kt',
-    'king': 'K',
-    'queen': 'Q',
-    'rook': 'R',
-    'pawn': 'P',
-}
 
 def piece_factory(piece, color='white'):
     '''

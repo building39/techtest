@@ -7,21 +7,15 @@ Created on April 22, 2016
 
 import copy
 import getopt
-import random
 import sys
 
 from board import Board
-from piece import PIECES, piece_factory
-from dns import reversename
+from piece import piece_factory
 
 VERSION = '1.0.0'
 
-INCREMENT = [ (),
-              (1, 1),
-              (-1, 1),
-              (1, -1),
-             (-1, -1)
-            ]
+from statics import PIECES
+
 
 def get_next_cell(cell, inc_tuple):
     row = int(cell[1]) + 1
@@ -41,19 +35,15 @@ class Chessercise(object):
     '''
     Part 1 of the Inmar Technical Test
     '''
-    _pawns = 0
-    _rooks = 0
-    _knights = 0
-    _bishops = 0
-    _queens = 0
-    _kings = 0
 
-    def __init__(self, board, piece, position, num_opponents=8, verbose=False):
-        self.board = board
-        self.piece = piece
+    def __init__(self, piece, position, num_opponents=0, verbose=False):
+#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+#        import pydevd; pydevd.settrace()
+        self.board = Board(empty=True)
+        self.piece = piece_factory(piece)
+        self.board.set_piece(self.piece, position)
         self.position = position
         self.verbose = verbose
-        self.pieces = PIECES.keys()
         self.num_opponents = num_opponents
         self.deadends = []
         self.path_list = []
@@ -63,6 +53,8 @@ class Chessercise(object):
         self.max_recursion_depth = 0
         self.shutting_down = False
         self.min_path_length = 0
+        self.board.populate_random(self.num_opponents)
+        self.color = self.piece.get_color()
 
     def _bishop_moves(self):
         # adjust target to match color of tile on which the bishop sits.
@@ -74,30 +66,12 @@ class Chessercise(object):
                 self.target_node = '%c%d' % (self.target_node[0], row + 1)
 
         self.save_board = copy.deepcopy(self.board)
-        moves = self.show_moves(self.piece, self.cur_pos)
+        moves = self.show_moves()
 
         self.path = list([self.cur_pos])
         self.board.set_piece(self.piece, self.cur_pos)
         self.board.visit_node(self.cur_pos)
         self.bishop_shortest_path(moves)
-
-    def _create_random_piece(self):
-        new_piece = self.pieces[random.randint(0, len(self.pieces) - 1)]
-        if new_piece == 'pawn' and self._pawns < 8:
-            self._pawns += 1
-        elif new_piece == 'rook' and self._rooks < 2:
-            self._rooks += 1
-        elif new_piece == 'knight' and self._knights < 2:
-            self._knights += 1
-        elif new_piece == 'bishop' and self._bishops < 2:
-            self._bishops += 1
-        elif new_piece == 'queen' and self._queens < 1:
-            self._queens += 1
-        elif new_piece == 'king' and self._kings < 1:
-            self._kings += 1
-        else:
-            return self._create_random_piece()
-        return new_piece
 
     def _get_farthest_tile(self, pos):
 
@@ -157,14 +131,6 @@ class Chessercise(object):
         else:
             return None
 
-    def _get_random_tile(self):
-        row = random.randint(1, 8)
-        col = random.randint(1, 8)
-        if self.board.board['%c%d' % (chr(col + 0x60), row)]['piece']:  # already occupied?
-            return self._get_random_tile()
-        else:
-            return '%c%d' % (chr(col + 0x60), row)
-
     def _knight_sort(self, moves):
         alist = []
         final_list = []
@@ -195,13 +161,6 @@ class Chessercise(object):
 
         return final_list
 
-    def _populate_random(self, num):
-        random.seed()
-        for _i in range(1, num + 1):
-            tile = self._get_random_tile()
-            new_piece = self._create_random_piece()
-            self.board.set_piece(piece_factory(new_piece, color='black'), tile)
-
     def _target_bishop(self):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
@@ -225,7 +184,7 @@ class Chessercise(object):
 
         self.save_board = copy.deepcopy(self.board)
 
-        moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
+        moves = self.remove_visited_nodes(self.show_moves()[0])
 
         self.path = list([self.cur_pos])
         self.board.set_piece(self.piece, self.cur_pos)
@@ -237,12 +196,10 @@ class Chessercise(object):
         print('Pawn not implemented')
 
     def _target_queen(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
 
         target_piece = piece_factory('bishop')  # we're gonna try diagonals first
         self.board.set_piece(target_piece, self.target_node)
-        target_path = self.show_moves(self.piece, self.target_node)[0]
+        target_path = self.show_moves()[0]
         self.board.remove_piece(self.target_node)
 
         self.cur_pos = self.orig_pos = self.piece.get_position()
@@ -260,7 +217,7 @@ class Chessercise(object):
         self.cur_pos = self.orig_pos
         self.board.set_piece(self.piece, self.cur_pos)
         self.board.visit_node(self.cur_pos)
-        self.rook(self.show_moves(self.piece, self.cur_pos))
+        self.rook(self.show_moves())
         if len(self.path_list[0]) == 2:
             return(self.path_list)  # Shortest possible path
 
@@ -269,7 +226,7 @@ class Chessercise(object):
             self.cur_pos = self.orig_pos
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            self.queen_vh_diagonal(self.show_moves(self.piece, self.cur_pos), vertical)
+            self.queen_vh_diagonal(self.show_moves(), vertical)
 
         # Now try the rook  moves off of the bishop moves off of the horizontal moves
         for v1 in [True, False]:
@@ -277,13 +234,13 @@ class Chessercise(object):
                 self.cur_pos = self.orig_pos
                 self.board.set_piece(self.piece, self.cur_pos)
                 self.board.visit_node(self.cur_pos)
-                self.queen_vh_diagonal_vh(self.show_moves(self.piece, self.cur_pos), v1, v2)
+                self.queen_vh_diagonal_vh(self.show_moves(), v1, v2)
 
         return(self.path_list)
 
     def _target_rook(self):
         self.cur_pos = self.orig_pos = self.piece.get_position()
-        self.rook(self.show_moves(self.piece, self.cur_pos))
+        self.rook(self.show_moves())
         return(self.path_list)
 
     def bishop_shortest_path(self, moves):
@@ -333,7 +290,7 @@ class Chessercise(object):
             self.cur_pos = p
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.piece, self.cur_pos)
+            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves()
             secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
             secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
             if self.quadrant in [1, 4]:
@@ -365,7 +322,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_pos)
-                next_moves = self.show_moves(self.piece, self.cur_pos)
+                next_moves = self.show_moves()
                 self.bishop_shortest_path(next_moves)
                 break
 
@@ -467,7 +424,7 @@ class Chessercise(object):
                     if not self.board.board[cell]['piece']:
                         i += inc
                         continue
-                moves.pop(i)  # no vertical moves in this column
+                moves.pop(i)  # no diagonal moves in this column
 
         right_diag = list(diags[0])
         left_diag = list(diags[1])
@@ -578,7 +535,7 @@ class Chessercise(object):
                 return
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            next_moves = self.remove_visited_nodes(self.show_moves(self.piece, self.cur_pos)[0])
+            next_moves = self.remove_visited_nodes(self.show_moves()[0])
             self.knights_shortest_path(next_moves)
 
         self.recursion_depth -= 1
@@ -628,7 +585,7 @@ class Chessercise(object):
             self.cur_pos = v
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            (_, horz, _, _, _) = self.show_moves(self.piece, self.cur_pos)
+            (_, horz, _, _, _) = self.show_moves()
             horz = self.remove_visited_nodes(horz)
             if self.quadrant in [1, 3]:
                 horz = sorted(horz, reverse=True)
@@ -661,7 +618,7 @@ class Chessercise(object):
                 self.path.extend([self.cur_pos])
                 self.board.set_piece(self.piece, self.cur_pos)
                 self.board.visit_node(self.cur_pos)
-                (_, _, vert2, _, _) = self.show_moves(self.piece, self.cur_pos)
+                (_, _, vert2, _, _) = self.show_moves()
                 vert2 = self.remove_visited_nodes(vert2)
                 self.vertical(vert2)
 
@@ -714,7 +671,7 @@ class Chessercise(object):
             self.cur_pos = p
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.piece, self.cur_pos)
+            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves()
             secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
             secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
             if self.quadrant in [1, 3]:
@@ -746,7 +703,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_pos)
-                next_moves = self.show_moves(self.piece, self.cur_pos)
+                next_moves = self.show_moves()
                 self.queen_diagonal_path(next_moves)
                 break
 
@@ -801,9 +758,9 @@ class Chessercise(object):
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
             if vertical:
-                (_, _, vhmoves, _, _) = self.show_moves(self.piece, self.cur_pos)
+                (_, _, vhmoves, _, _) = self.show_moves()
             else:
-                (_, vhmoves, _, _, _) = self.show_moves(self.piece, self.cur_pos)
+                (_, vhmoves, _, _, _) = self.show_moves()
             if self.quadrant in [1, 3]:
                 vhmoves = sorted(vhmoves, reverse=True)
             else:
@@ -835,7 +792,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_pos)
-                next_moves = self.show_moves(self.piece, self.cur_pos)
+                next_moves = self.show_moves()
                 self.queen_diagonal_vh_path(next_moves, vertical)
                 break
 
@@ -880,7 +837,7 @@ class Chessercise(object):
             self.cur_pos = m
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            self.queen_diagonal_path(self.show_moves(self.piece, self.cur_pos))
+            self.queen_diagonal_path(self.show_moves())
             self.board = copy.deepcopy(save_board)
 
         return
@@ -923,16 +880,15 @@ class Chessercise(object):
             self.cur_pos = m
             self.board.set_piece(self.piece, self.cur_pos)
             self.board.visit_node(self.cur_pos)
-            self.queen_diagonal_vh_path(self.show_moves(self.piece, self.cur_pos), vertical2)
+            self.queen_diagonal_vh_path(self.show_moves(), vertical2)
             self.board = copy.deepcopy(save_board)
 
         return
-    def show_moves(self, piece, position):
+    def show_moves(self):
         '''
         Show all possible moves for this piece, from this position.
         '''
-
-        return piece.legal_moves(self.board)
+        return self.piece.legal_moves(self.board)
 
     def sort_nodes(self, nodes):
         reverse = False
@@ -943,8 +899,6 @@ class Chessercise(object):
         return sorted(nodes, reverse=reverse)
 
     def target(self, piece, position):
-        self.color = piece.get_color()
-        self._populate_random(self.num_opponents)
 
         # save the board state. Moving a piece onto a tile that has an opponent's piece
         # results in a capture of that piece, removing it from the board. We need to restore
@@ -1004,7 +958,7 @@ class Chessercise(object):
                 self.board = copy.deepcopy(self.save_board)
                 return
             self.board.visit_node(self.cur_pos)
-            (_, horz, _, _, _) = self.show_moves(self.piece, self.cur_pos)
+            (_, horz, _, _, _) = self.show_moves()
             horz = self.remove_visited_nodes(horz)
 
             if self.quadrant in [1, 3]:
@@ -1036,7 +990,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_pos)
-                (_, _, vert, _, _) = self.show_moves(self.piece, self.cur_pos)
+                (_, _, vert, _, _) = self.show_moves()
                 vert = self.remove_visited_nodes(vert)
                 self.vertical(vert)
                 break
@@ -1113,28 +1067,26 @@ def main(argv):
         elif opt == '--verbose':
             verbose = True
 
-#    sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#    import pydevd; pydevd.settrace()
-
     if target and capture:
         print('--capture and --target are mutually exclusive')
         usage()
 
-    if in_piece in PIECES:
-        piece = piece_factory(in_piece)
-    else:
+    if in_piece not in PIECES:
         print("Unknown piece %s" % in_piece)
         sys.exit(1)
 
-    board = Board(empty=True)
-
-    if board.is_valid_position(in_position):
-        board.set_piece(piece, in_position)
+    col = ord(in_position[1]) - 0x60
+    row = int(in_position[0])
+    if col in range(1, 9) and row in range(1, 9):
+        pass
     else:
         print('Failed on position %s' % in_position)
         sys.exit(1)
 
-    obj = Chessercise(board, piece, in_position, num_opponents=num_opponents, verbose=verbose)
+    obj = Chessercise(in_piece,
+                      in_position,
+                      num_opponents=num_opponents,
+                      verbose=verbose)
     if capture:
         path_list = obj.capture()
         print(path_list)
@@ -1171,7 +1123,7 @@ def main(argv):
                 print(mp)
 
     else:
-        moves = obj.show_moves(piece, in_position)[0]
+        moves = obj.show_moves()[0]
         print moves
 
 if __name__ == '__main__':
