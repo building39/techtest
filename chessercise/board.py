@@ -104,16 +104,15 @@ class Board(object):
             self.set_piece(piece_factory(new_piece, color='black'), node)
 
     def print_board(self):
-        width = 62
         cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
-        print('+'),
-        print('-' * width),
-        print('+')
-        # import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
+        row = 0
+        print('  +-------+-------+-------+-------+-------+-------+-------+--------+')
         for c in cols:
+            print(' '),
             print('|       ') * 8,
             print('|')
+            row += 1
+            print(row),
             rowdict = {k: v for k, v in self.board.items() if k.startswith(c)}
             for r in sorted(rowdict):
                 if rowdict[r]['piece']:
@@ -127,11 +126,11 @@ class Board(object):
                 else:
                     print('|      '),
             print(' |')
+            print(' '),
             print('|       ') * 8,
             print('|')
-            print('+'),
-            print('-' * width),
-            print('+')
+            print('  +-------+-------+-------+-------+-------+-------+-------+--------+')
+        print('      A       B       C       D       E       F       G        H')
 
     def remove_piece(self, node):
         self.board[node]['piece'] = None
