@@ -36,7 +36,7 @@ class Piece(object):
         '''
         self.piece = piece
         self.color = color
-        self.position = ''
+        self.node = ''
 
     def get_color(self):
         return self.color
@@ -44,25 +44,25 @@ class Piece(object):
     def get_type(self):
         return self.piece
 
-    def get_position(self):
+    def get_node(self):
         '''
-        Get the board position of this piece
+        Get the board node of this piece
         '''
-        return self.position
+        return self.node
 
-    def set_position(self, position):
+    def set_node(self, node):
         '''
-        Set the board position of this piece
+        Set the board node of this piece
         '''
-        self.position = position
+        self.node = node
 
     def diagonal_moves(self):
         '''
         Calculate all possible diagonal moves for this piece
         '''
-        position = self.position
-        from_col = ord(position[0]) - 0x60
-        from_row = int(position[1])
+        node = self.node
+        from_col = ord(node[0]) - 0x60
+        from_row = int(node[1])
         ldiag = []
         rdiag = []
         for move in range(1, 9):
@@ -90,15 +90,15 @@ class Piece(object):
         Calculate all possible horizontal moves for this piece
         '''
         valid_moves = []
-        position = self.position
-        from_row = int(position[1])
+        node = self.node
+        from_row = int(node[1])
         for move in range(from_row, 9):
             if move != from_row:  # Horizontal moves
-                new_pos = '%c%d' % (position[0], move)
+                new_pos = '%c%d' % (node[0], move)
                 valid_moves.append(new_pos)
         for move in range(from_row, 0, -1):
             if move != from_row:  # Horizontal moves
-                new_pos = '%c%d' % (position[0], move)
+                new_pos = '%c%d' % (node[0], move)
                 valid_moves.append(new_pos)
         return sorted(valid_moves)
 
@@ -107,9 +107,9 @@ class Piece(object):
         Calculate all possible horizontal moves for this piece
         '''
         valid_moves = []
-        position = self.position
-        from_col = ord(position[0]) - 0x60
-        from_row = int(position[1])
+        node = self.node
+        from_col = ord(node[0]) - 0x60
+        from_row = int(node[1])
         for move in range(from_col, 9):
             if move != from_col:  # Vertical moves
                 new_pos = '%c%d' % (chr(move + 0x60), from_row)
@@ -172,9 +172,9 @@ class Knight(Piece):
 
     def legal_moves(self, board):
         valid_moves = []
-        position = self.position
-        from_col = ord(position[0]) - 0x60
-        from_row = int(position[1])
+        node = self.node
+        from_col = ord(node[0]) - 0x60
+        from_row = int(node[1])
         for move in self.MOVE_DIRECTIONS:
             row = from_row + int(move[1])
             col = chr((from_col + int(move[0]) + 0x60))
