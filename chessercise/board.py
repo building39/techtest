@@ -17,8 +17,6 @@ class Board(object):
 
     def __init__(self, empty=True):
 
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
         self._pawns = 0
         self._rooks = 0
         self._knights = 0
@@ -75,25 +73,20 @@ class Board(object):
     def is_valid_move(self, from_node, to_node):
         ok_move = True
 
-        if not self.is_valid_position(to_node):
-            print('To position %s is off the board' % to_node)
+        if not self.is_valid_node(to_node):
             ok_move = False
 
-        if not self.is_valid_position(from_node):
-            print('From position %s is off the board' % from_node)
+        if not self.is_valid_node(from_node):
             ok_move = False
 
         return(ok_move)
 
-    def is_valid_position(self, node):
-        # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        # import pydevd; pydevd.settrace()
+    def is_valid_node(self, node):
         col = node[0]
         row = node[1]
         if (int(row) in range(1, 9)) and (ord(col) in range(ord('a'), ord('i'))):
             return True  # Position is OK
         else:
-            print('Error: position %s is off the board' % node)
             return False
 
     def populate_random(self, num):
@@ -137,9 +130,9 @@ class Board(object):
 
     def set_piece(self, piece, node):
         self.board[node]['piece'] = piece
-        if piece.get_position():
-            self.board[piece.get_position()]['piece'] = None
-        piece.set_position(node)
+        if piece.get_node():
+            self.board[piece.get_node()]['piece'] = None
+        piece.set_node(node)
 
     def visit_node(self, node):
         self.board[node]['visited'] = True
