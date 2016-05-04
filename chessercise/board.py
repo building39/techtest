@@ -15,7 +15,7 @@ def is_odd(num):
 
 class Board(object):
 
-    def __init__(self, empty):
+    def __init__(self, empty=True):
 
         # sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
         # import pydevd; pydevd.settrace()
@@ -102,6 +102,36 @@ class Board(object):
             node = self.get_random_node()
             new_piece = self.create_random_piece()
             self.set_piece(piece_factory(new_piece, color='black'), node)
+
+    def print_board(self):
+        width = 62
+        cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+        print('+'),
+        print('-' * width),
+        print('+')
+        # import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        # import pydevd; pydevd.settrace()
+        for c in cols:
+            print('|       ') * 8,
+            print('|')
+            rowdict = {k: v for k, v in self.board.items() if k.startswith(c)}
+            for r in sorted(rowdict):
+                if rowdict[r]['piece']:
+                    color = rowdict[r]['piece'].get_color()[0]
+                    ptype = rowdict[r]['piece'].get_type()
+                    if ptype == 'knight':
+                        ptype = 'kn'
+                    else:
+                        ptype = '%c ' % ptype[0]
+                    print('| %c %s ' % (color, ptype)),
+                else:
+                    print('|      '),
+            print(' |')
+            print('|       ') * 8,
+            print('|')
+            print('+'),
+            print('-' * width),
+            print('+')
 
     def remove_piece(self, node):
         self.board[node]['piece'] = None
