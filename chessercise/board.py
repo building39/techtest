@@ -97,16 +97,13 @@ class Board(object):
             self.set_piece(piece_factory(new_piece, color='black'), node)
 
     def print_board(self):
-        cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
-        row = 0
         print('  +-------+-------+-------+-------+-------+-------+-------+--------+')
-        for c in cols:
+        for row in range(8, 0, -1):
             print(' '),
             print('|       ') * 8,
             print('|')
-            row += 1
             print(row),
-            rowdict = {k: v for k, v in self.board.items() if k.startswith(c)}
+            rowdict = {k: v for k, v in self.board.items() if int(k[1]) == row}
             for r in sorted(rowdict):
                 if rowdict[r]['piece']:
                     color = rowdict[r]['piece'].get_color()[0]
