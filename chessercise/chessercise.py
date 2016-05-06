@@ -11,12 +11,26 @@ import sys
 
 from board import Board
 from piece import piece_factory
-from compiler.ast import Node
 
 VERSION = '1.0.0'
 
 from statics import PIECES
 
+
+def get_nodes(board, start, end):
+    if start[0] == end[0]:
+        # Get column
+        step = 1 if start[1] <= end[1] else -1
+        cols = {k: v for k, v in board.board.items() if k[0] == start[0]}.keys()
+        return [c for c in cols if (int(c[1]) in range(int(start[1]), int(end[1]) + step, step))]
+    elif start[1] == end[1]:
+        # Get row
+        step = 1 if start[0] <= end[0] else -1
+        rows = {k: v for k, v in board.board.items() if int(k[1]) == start[1]}
+        return [r for r in rows if (ord(r[0]) in range(ord(start[0]), ord(end[0]) + step, step))]
+    else:
+        # Get diagonal
+        pass
 
 def get_next_cell(cell, inc_tuple):
     row = int(cell[1]) + 1
@@ -41,6 +55,7 @@ class Chessercise(object):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
         self.board = Board(empty=True)
+        self.original_board = copy.deepcopy(self.board)
         self.piece = piece_factory(piece)
         self.board.set_piece(self.piece, node)
         self.node = node
@@ -163,9 +178,6 @@ class Chessercise(object):
         return final_list
 
     def _target_bishop(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
         self.cur_node = self.orig_pos = self.piece.get_node()
         self.path.extend([self.cur_node])
 
@@ -177,9 +189,7 @@ class Chessercise(object):
         print('King not implemented')
 
     def _target_knight(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-        target_piece = piece_factory('knight')  # we're gonna try diagonals first
+        target_piece = piece_factory('knight')
         self.board.set_piece(target_piece, self.target_node)
         target_path = self.show_moves(target_piece)[0]
         self.board.remove_piece(self.target_node)
@@ -337,98 +347,174 @@ class Chessercise(object):
     def capture(self):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
-
-
         def _capture(here, opplocs, path_list):
+            self.original_board = copy.deepcopy(self.board)
             self.all_opponents = list(opplocs.keys())
             self.cap_recursion_depth = 0
             self.cap_max_recursion_depth = 0
             shortest_path = []
+            capture_method = {'bishop': _capture_by_bishop,
+                              'knight': _capture_by_knight,
+                              'queen':  _capture_by_queen,
+                              'rook':   _capture_by_rook}[self.piece.get_type()]
+            get_moves_method = {'bishop': _get_moves_for_bishop,
+                                'knight': _get_moves_for_knight,
+                                'queen':  _get_moves_for_queen,
+                                'rook':   _get_moves_for_rook}[self.piece.get_type()]
+            self.capture_path = []
             for opp in opplocs:
                 opp_list = list(opplocs.keys())
                 opp_list.pop(opp_list.index(opp))
-                self.capture_path = []
-                {'bishop': _go_to_node_bishop,
-                 'knight': _go_to_node_knight,
-                 'queen':  _go_to_node_queen,
-                 'rook':   _go_to_node_rook}[self.piece.get_type()](here,
-                                                                    opp,
-                                                                    list(opp_list),
-                                                                    list(self.target(here, opp)[0]),
-                                                                    [here, opp])
+                capture_method(here,
+                               opp,
+                               list(opp_list),
+                               get_moves_method(here, opp),
+                               [here, opp])
             print('Final Shortest path: %s' % self.capture_path)
             return shortest_path
 
-        def _get_opponents(board, color):
-            # Get the locations of all opponent pieces
-            return {k: v for k, v in self.board.board.items() \
-                       if (board.board[k]['piece'] and
-                           board.board[k]['piece'].get_color() != color)}
-
-        def _go_to_node_bishop(here, opp, path):
+        def _capture_by_bishop(here, opp, path):
             pass
-        def _go_to_node_knight(here, opp, opplocs, path, cpath):
-            if cpath == ['c1', 'f3', 'b8', 'a5', 'b3', 'd6', 'e5', 'a8', 'e1']:
-                print('wtf?')
+
+        def _capture_by_knight(here, opp, opplocs, path, cpath):
+            if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
+                return
             self.path_list = []
             save_board = copy.deepcopy(self.board)
             self.cur_node = path[-1]
             self.board.set_piece(self.piece, self.cur_node)
             self.path_list = []
             for new_opp in opplocs:
-                x = self.target(opp, new_opp)[0]
                 self.cap_recursion_depth += 1
                 self.cap_max_recursion_depth = self.cap_recursion_depth
                 if self.verbose:
                     if len(cpath) > 0:
                         print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
-#                    save_board = copy.deepcopy(self.board)
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                _go_to_node_knight(path[-1],
+                _capture_by_knight(path[-1],
                                    new_opp,
                                    list(new_opps),
-                                   path + list(self.target(opp, new_opp)[0])[1:],
+                                   path + _get_moves_for_knight(opp, new_opp)[1:],
                                    list(cpath + [new_opp]))
-
-#                    self.board = copy.deepcopy(save_board)
-            print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
+            if self.verbose:
+                print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
             if self.cap_recursion_depth == 7:
                 if self.capture_path:
-                    if len(path) < len(self.capture_path):
+                    if path and len(path) < len(self.capture_path):
                         self.capture_path = list(path)
+                        if self.verbose:
+                            print('New path discovered: %s' % self.capture_path)
                 else:
                     self.capture_path = list(path)
+                    if self.verbose:
+                        print('First path discovered: %s' % self.capture_path)
                 if self.verbose:
-#                        print('%d %d %s' % (self.recursion_depth, len(self.capture_path), cpath))
                     print('Shortest path: %s' % (self.capture_path))
                     sys.stdout.flush()
             self.cap_recursion_depth -= 1
             self.board = copy.deepcopy(save_board)
             return
 
-        def _go_to_node_queen(here, opp, path):
+        def _capture_by_queen(here, opp, path):
             pass
-        def _go_to_node_rook(from_node, to_node, path):
-            '''
-                Returns the node on which the opponent piece resided, or "None" if the piece cannot be reached
-                (e.g. resides on node of different color than the node on which an attacking Bishop resides).
-            '''
-            self.cur_node = from_node
-            moves = self.remove_visited_nodes(self.show_moves()[0])
-            if to_node in moves:
-                self.cur_node = to_node
-                self.board.visit_node(to_node)
-                path.extend([to_node])
-                self.board.set_piece(self.piece, to_node)
-                return (to_node, path)
+
+        def _capture_by_rook(here, opp, opplocs, path, cpath):
+            if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
+                return
+            self.path_list = []
+            save_board = copy.deepcopy(self.board)
+            self.cur_node = path[-1]
+            self.board.set_piece(self.piece, self.cur_node)
+            self.path_list = []
+            for new_opp in opplocs:
+                self.cap_recursion_depth += 1
+                self.cap_max_recursion_depth = self.cap_recursion_depth
+                if self.verbose:
+                    if len(cpath) > 0:
+                        print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
+                new_opps = sorted(list(opplocs))
+                new_opps.pop(new_opps.index(new_opp))
+                _capture_by_rook(path[-1],
+                                   new_opp,
+                                   list(new_opps),
+                                   path + _get_moves_for_rook(opp, new_opp)[1:],
+                                   list(cpath + [new_opp]))
+
+            if self.verbose:
+                print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
+            if self.cap_recursion_depth == 7:
+                if self.capture_path:
+                    if path and len(path) < len(self.capture_path):
+                        self.capture_path = list(path)
+                        if self.verbose:
+                            print('New path discovered: %s' % self.capture_path)
+                            if not self.capture_path:
+                                import traceback; traceback.print_stack()
+                else:
+                    self.capture_path = list(path)
+                    if self.verbose:
+                        print('First path discovered: %s' % self.capture_path)
+                if self.verbose:
+                    print('Shortest path: %s' % (self.capture_path))
+                    sys.stdout.flush()
+            self.cap_recursion_depth -= 1
+            self.board = copy.deepcopy(save_board)
+            return
+
+        def _get_moves_for_bishop(here, opp):
+            return _get_moves('bishop', here, opp)
+
+        def _get_moves_for_knight(here, opp):
+            return list(self.target(here, opp)[0])
+
+        def _get_moves_for_queen(here, opp):
+            return _get_moves('queen', here, opp)
+
+        def _get_moves_for_rook(here, opp):
+            return _get_moves('rook', here, opp)
+
+        def _get_moves(ptype, here, opp):
+            my_moves = self.show_moves(self.piece)[0]
+            if opp in my_moves:
+                return [opp]
             else:
-                to_col = to_node[0]
-                from_row = from_node[1]
-                node = '%c%c' % (to_col, from_row)
-                path.extend([to_node])
-                return (node, path)
-            return (None, path)
+                save_board = copy.deepcopy(self.board)
+                self.board = copy.deepcopy(self.original_board)
+                target_piece = piece_factory(ptype)
+                self.board.set_piece(target_piece, opp)
+                target_moves = self.show_moves(target_piece)[0]
+                self.board.remove_piece(opp)
+                intersection = list(set(my_moves).intersection(target_moves))
+                # Check each move for obstructions - toss out the ones that have them.
+                obstructed_nodes = []
+                for i in intersection:
+                    nodes = get_nodes(self.board, here, i)
+                    if nodes:
+                        for node in nodes:
+                            if self.board.board[node]['piece'] and i != here:
+                                obstructed_nodes.extend([i])
+                                break
+                    nodes = get_nodes(self.board, opp, i)
+                    if nodes:
+                        for node in nodes:
+                            if self.board.board[node]['piece'] and i != opp:
+                                obstructed_nodes.extend([i])
+                                break
+                for obstruction in obstructed_nodes:
+                    if obstruction in intersection:
+                        intersection.pop(intersection.index(obstruction))
+                self.board = copy.deepcopy(save_board)
+                if not intersection:
+                    return []
+                else:
+                    return [here, intersection[0], opp]
+
+        def _get_opponents(board, color):
+            # Get the locations of all opponent pieces
+            return {k: v for k, v in self.board.board.items() \
+                       if (board.board[k]['piece'] and
+                           board.board[k]['piece'].get_color() != color)}
 
         if self.verbose:
             self.board.print_board()
@@ -437,11 +523,8 @@ class Chessercise(object):
         self.cur_node = self.piece.get_node()
         my_color = self.piece.get_color()
 
-
-        path_list = _capture(self.cur_node,
-                             _get_opponents(self.board, my_color),
-                             [])
-
+        _capture(self.cur_node, _get_opponents(self.board, my_color), [])
+        return
 
     def check_cell_occupied(self, cell):
         if self.board.board[cell]['piece']:
@@ -657,7 +740,7 @@ class Chessercise(object):
                 next_moves = self.remove_visited_nodes(self.show_moves()[0])
                 self.knights_shortest_path(next_moves, target_moves)
         if self.path_list:
-            if len(self.path) < len(self.path_list[0]):
+            if self.path and len(self.path) < len(self.path_list[0]):
                 self.path_list = list([self.path])
         else:
             self.path_list = list([self.path])
