@@ -25,7 +25,38 @@ class TestChessercise(unittest.TestCase):
         self.assertFalse(board.is_valid_node('z1'))
         self.assertFalse(board.is_valid_node('a9'))
 
-    '''
+    def testCaptureByBishopC1(self):
+        piece = 'bishop'
+        node = 'c1'
+
+        opp1 = piece_factory('knight', color='black')
+        opp2 = piece_factory('pawn', color='black')
+        opp3 = piece_factory('queen', color='black')
+        opp4 = piece_factory('bishop', color='black')
+        opp5 = piece_factory('king', color='black')
+        opp6 = piece_factory('pawn', color='black')
+        opp7 = piece_factory('knight', color='black')
+        opp8 = piece_factory('pawn', color='black')
+
+        c = Chessercise(piece, node, num_opponents=0)
+
+        c.board.set_piece(opp1, 'a8')
+        c.board.set_piece(opp2, 'b8')
+        c.board.set_piece(opp3, 'd6')
+        c.board.set_piece(opp4, 'a5')
+        c.board.set_piece(opp5, 'e5')
+        c.board.set_piece(opp6, 'b3')
+        c.board.set_piece(opp7, 'f3')
+        c.board.set_piece(opp8, 'e1')
+
+        c.verbose = True
+
+        path = c.capture()
+
+        answer = ['c1', 'f4', 'e5', 'd6', 'b8', 'c7', 'a5', 'e1']
+
+        self.assertEqual(path, answer, "Path should be %s, not %s" % (answer, path))
+
     def testCaptureByKnightC1(self):
         piece = 'knight'
         node = 'c1'
@@ -58,6 +89,7 @@ class TestChessercise(unittest.TestCase):
 
         self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
 
+    '''
     def testCaptureByQueenC1(self):
         piece = 'queen'
         node = 'c1'

@@ -17,7 +17,7 @@ VERSION = '1.0.0'
 from statics import PIECES
 
 
-def get_nodes(board, start, end):
+def get_nodes(board, piece, start, end):
     if start[0] == end[0]:
         # Get column
         step = 1 if start[1] <= end[1] else -1
@@ -28,9 +28,26 @@ def get_nodes(board, start, end):
         step = 1 if start[0] <= end[0] else -1
         rows = {k: v for k, v in board.board.items() if int(k[1]) == start[1]}
         return [r for r in rows if (ord(r[0]) in range(ord(start[0]), ord(end[0]) + step, step))]
-    else:
+    elif board.get_node_color(start) == board.get_node_color(end):
         # Get diagonal
-        pass
+        if start[0] > end[0]:
+            x = end;
+            start = end
+            end = x
+        if start[1] > end[1]:
+            row_step = -1
+        else:
+            row_step = 1
+        node = start
+        nodes = [start, end]
+        while(node != end):
+            node = '%c%d' % (chr(ord(node[0]) + 1), int(node[1]) + row_step)
+            if node not in nodes:
+                nodes.extend([node])
+        return nodes
+    else:
+        # no possible moves
+        return []
 
 def get_next_cell(cell, inc_tuple):
     row = int(cell[1]) + 1
@@ -359,26 +376,58 @@ class Chessercise(object):
                                 'queen':  _get_moves_for_queen,
                                 'rook':   _get_moves_for_rook}[self.piece.get_type()]
             self.capture_path = []
+
             for opp in opplocs:
                 opp_list = list(opplocs.keys())
                 opp_list.pop(opp_list.index(opp))
-                capture_method(copy.deepcopy(self.board),
-                               copy.deepcopy(self.piece),
-                               here,
-                               opp,
-                               list(opp_list),
-                               [here] + get_moves_method(copy.deepcopy(self.board),
-                                                         copy.deepcopy(self.piece),
-                                                         here,
-                                                         opp),
-                               [here, opp])
-            print('Final Shortest path: %s' % self.capture_path)
-            return self.capture_path
+                path_list = capture_method(copy.deepcopy(self.board),
+                                           copy.deepcopy(self.piece),
+                                           here,
+                                           opp,
+                                           list(opp_list),
+                                           [here] + get_moves_method(copy.deepcopy(self.board),
+                                                                     copy.deepcopy(self.piece),
+                                                                     here,
+                                                                     opp),
+                                           [here, opp],
+                                           [])
+            shortest_path = path_list[0]
+            for path in path_list:
+                if len(path) < len(shortest_path):
+                    shortest_path = path
+            print('Final Shortest path: %s' % shortest_path)
+            return shortest_path
 
-        def _capture_by_bishop(board, here, opp, path):
-            pass
+        def _capture_by_bishop(board, piece, here, opp, opplocs, path, cpath, path_list):
+            self.path_list = []
+            self.cur_node = path[-1]
+            self.path_list = []
+            board.set_piece(piece, opp)
+            for new_opp in opplocs:
+#                if self.verbose:
+#                    if len(cpath) > 0:
+#                        print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
+                new_opps = sorted(list(opplocs))
+                new_opps.pop(new_opps.index(new_opp))
+                board.set_piece(piece, opp)
+                copied_board = copy.deepcopy(board)
+                path1 = path + _get_moves_for_bishop(copied_board, piece, opp, new_opp)
+                path_list = _capture_by_bishop(copied_board,
+                                                  copy.deepcopy(piece),
+                                                  path[-1],
+                                                  new_opp,
+                                                  list(new_opps),
+                                                  path + _get_moves_for_bishop(copied_board, piece, opp, new_opp),
+                                                  list(cpath + [new_opp]),
+                                                  path_list)
 
-        def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath):
+            if len(_get_opponents(board, piece.get_color())) == 0:
+                path_list.extend([path])
+                if self.verbose:
+                    print('Found path %s' % (path))
+            return path_list
+
+        def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath, path_list):
             if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
                 return
             self.path_list = []
@@ -399,7 +448,8 @@ class Chessercise(object):
                                    new_opp,
                                    list(new_opps),
                                    path + _get_moves_for_knight(board, piece, opp, new_opp),
-                                   list(cpath + [new_opp]))
+                                   list(cpath + [new_opp]),
+                                   path_list)
             if self.verbose:
                 print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
             if self.cap_recursion_depth == 7:
@@ -421,7 +471,7 @@ class Chessercise(object):
         def _capture_by_queen(board, here, opp, path):
             pass
 
-        def _capture_by_rook(board, piece, here, opp, opplocs, path, cpath):
+        def _capture_by_rook(board, piece, here, opp, opplocs, path, cpath, path_list):
             if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
                 return
             self.path_list = []
@@ -442,7 +492,8 @@ class Chessercise(object):
                                  new_opp,
                                  list(new_opps),
                                  path + _get_moves_for_rook(board, piece, opp, new_opp),
-                                 list(cpath + [new_opp]))
+                                 list(cpath + [new_opp]),
+                                 path_list)
 
             if self.verbose:
                 print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
@@ -465,7 +516,10 @@ class Chessercise(object):
             return
 
         def _get_moves_for_bishop(board, piece, here, opp):
-            return _get_moves('bishop', board, piece, here, opp)
+            if board.get_node_color(here) != board.get_node_color(opp):
+                print('Bishop on %s cannot capture opponent at %s' % (here, opp))
+                return []  # diagonal moves must be of same color
+            return _get_moves('bishop', copy.deepcopy(board), piece, here, opp)
 
         def _get_moves_for_knight(board, piece, here, opp):
             return list(self.target(here, opp)[0])
@@ -477,7 +531,6 @@ class Chessercise(object):
             return _get_moves('rook', board, piece, here, opp)
 
         def _get_moves(ptype, board, piece, here, opp):
-            board.set_piece(piece, here)
             my_moves = self.show_moves(board, piece)[0]
             if opp in my_moves:
                 return [opp]
@@ -490,20 +543,20 @@ class Chessercise(object):
                 # Check each move for obstructions - toss out the ones that have them.
                 obstructed_nodes = []
                 for i in intersection:
-                    nodes = get_nodes(board, here, i)
+                    nodes = get_nodes(board, piece, here, i)
                     if nodes:
                         for node in nodes:
                             if board.board[node]['piece'] and node != here:
                                 obstructed_nodes.extend([i])
                                 break
-                    nodes = get_nodes(board, opp, i)
+                    nodes = get_nodes(board, piece, opp, i)
                     if nodes:
                         for node in nodes:
                             if board.board[node]['piece'] and node != opp:
                                 obstructed_nodes.extend([i])
                                 break
                 for obstruction in obstructed_nodes:
-                    if obstruction in intersection:
+                    if obstruction in intersection and len(intersection) > 1:
                         intersection.pop(intersection.index(obstruction))
                 if not intersection:
                     return []
@@ -526,6 +579,13 @@ class Chessercise(object):
         self.cur_node = self.piece.get_node()
         my_color = self.piece.get_color()
 
+        if self.piece.get_type() == 'bishop':
+            opponents = _get_opponents(self.board, my_color)
+            for opponent in opponents:
+                if self.board.get_node_color(opponent) != self.board.get_node_color(self.cur_node):
+                    print('Bishop at %s cannot capture opponent at %s' % (self.cur_node, opponent))
+                    self.board.remove_piece(opponent)
+
         return _capture(self.cur_node, _get_opponents(self.board, my_color), [])
 
     def check_cell_occupied(self, cell):
@@ -536,6 +596,7 @@ class Chessercise(object):
             return None
 
     def find_opponents(self, end, nodes):
+        # finds opponents between current node and end node
         opponents = []
         bias = 1
         if self.cur_node not in nodes:
@@ -549,88 +610,6 @@ class Chessercise(object):
             if opponent and opponent[1] != self.piece.get_color():
                 opponents.extend([nodes[i]])
         return opponents
-
-    def get_diagonal_moves(self, piece):
-        '''
-        Right diagonal proceeds from 'a1' to 'h8' (or a parallel diagonal path).
-        Left diagonal proceeds from 'a8' to 'h1' (or a parallel diagonal path).
-        '''
-#        import sys; sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-        (_, right_diag, left_diag) = piece.diagonal_moves()
-        node = piece.get_node()
-        i = 0
-        right_diag.extend([node])
-        left_diag.extend([node])
-        right_diag = sorted(right_diag)
-        left_diag = sorted(left_diag)
-        diags = list([right_diag])
-        diags.extend([left_diag])
-        for d in range(0, 2):
-            moves = diags[d]
-            i = moves.index(node)
-            inc = 1
-            while(True):
-                if i < 0 or i > len(moves) - 1:
-                    break
-                m = moves[i]
-                if m == node:
-                    i += inc
-                    continue
-                if m == self.target_node:
-                    inc = -1
-                    i = moves.index(node) - 1
-                    continue
-                if m in self.path:
-                    moves.pop(i)
-                    continue
-                if m in self.deadends:
-                    moves.pop(i)
-                    continue
-                if self.board.board[m]['piece']:
-                    if inc == 1:
-                        diags[d] = list(moves[:(i - len(moves))])
-                        moves = list(diags[d])
-                        inc = -1
-                        i = moves.index(node)
-                        continue
-                    else:
-                        diags[d] = list(moves[i - len(moves) + 1:])
-                        break
-                row = int(m[1]) - 1
-                if row > 0:
-                    cell = "%c%d" % (m[0], row)
-                    if not self.board.board[cell]['piece']:
-                        i += inc
-                        continue
-                row = int(m[1]) + 1
-                if row < 9:
-                    cell = "%c%d" % (m[0], row)
-                    if not self.board.board[cell]['piece']:
-                        i += inc
-                        continue
-                col = ord(m[0]) - 0x60 - 1
-                if col > 0:
-                    cell = "%c%c" % (chr(col + 0x60), m[1])
-                    if not self.board.board[cell]['piece']:
-                        i += inc
-                        continue
-                col = ord(m[0]) - 0x60 + 1
-                if col < 9:
-                    cell = "%c%c" % (chr(col + 0x60), m[1])
-                    if not self.board.board[cell]['piece']:
-                        i += inc
-                        continue
-                moves.pop(i)  # no diagonal moves in this column
-
-        right_diag = list(diags[0])
-        left_diag = list(diags[1])
-        right_diag.pop(right_diag.index(node))
-        left_diag.pop(left_diag.index(node))
-        if self.quadrant in [1, 3]:
-            return (sorted(right_diag, reverse=True), sorted(left_diag, reverse=False))
-        else:
-            return (sorted(right_diag, reverse=False), sorted(left_diag, reverse=True))
 
     def get_horizontal_moves(self):
         moves = self.piece.horizontal_moves(self.board)

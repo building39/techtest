@@ -59,6 +59,9 @@ class Board(object):
             return self.create_random_piece()
         return new_piece
 
+    def get_node_color(self, node):
+        return self.board[node]['color']
+
     def get_random_node(self):
         row = random.randint(1, 8)
         col = random.randint(1, 8)
@@ -126,9 +129,9 @@ class Board(object):
         self.board[node]['piece'] = None
 
     def set_piece(self, piece, node):
-        self.board[node]['piece'] = piece
         if piece.get_node():
             self.board[piece.get_node()]['piece'] = None
+        self.board[node]['piece'] = piece
         piece.set_node(node)
 
     def visit_node(self, node):
