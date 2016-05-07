@@ -120,30 +120,6 @@ class Piece(object):
                 valid_moves.append(new_pos)
         return sorted(valid_moves)
 
-class King(Piece):
-    '''
-    A king piece
-    '''
-
-    def legal_moves(self, board):
-        print('Not implemented')
-
-class Queen(Piece):
-    '''
-    A queen piece
-    '''
-
-    def legal_moves(self, board):
-        horz = self.horizontal_moves(board)
-        vert = self.vertical_moves(board)
-        (_, rdiag, ldiag) = self.diagonal_moves()
-        allm = horz + vert + rdiag + ldiag
-        horz = sorted(horz)
-        vert = sorted(vert)
-        rdiag = sorted(rdiag)
-        ldiag = sorted(ldiag)
-        allm = sorted(allm)
-        return (allm, horz, vert, rdiag, ldiag)
 
 class Bishop(Piece):
     '''
@@ -153,6 +129,15 @@ class Bishop(Piece):
     def legal_moves(self, board):
         (allm, rdiag, ldiag) = self.diagonal_moves()
         return (allm, [], [], rdiag, ldiag)
+
+
+class King(Piece):
+    '''
+    A king piece
+    '''
+
+    def legal_moves(self, board):
+        print('Not implemented')
 
 
 class Knight(Piece):
@@ -182,6 +167,33 @@ class Knight(Piece):
                 valid_moves.append('%c%d' % (col, row))
         return (sorted(valid_moves), [], [], [], [])
 
+class Pawn(Piece):
+    '''
+    A pawn piece
+    '''
+
+    def legal_moves(self, board):
+        print('Not implemented')
+
+
+class Queen(Piece):
+    '''
+    A queen piece
+    '''
+
+    def legal_moves(self, board):
+        horz = self.horizontal_moves(board)
+        vert = self.vertical_moves(board)
+        (_, rdiag, ldiag) = self.diagonal_moves()
+        allm = horz + vert + rdiag + ldiag
+        horz = sorted(horz)
+        vert = sorted(vert)
+        rdiag = sorted(rdiag)
+        ldiag = sorted(ldiag)
+        allm = sorted(allm)
+        return (allm, horz, vert, rdiag, ldiag)
+
+
 class Rook(Piece):
     '''
     A rook piece
@@ -192,11 +204,3 @@ class Rook(Piece):
         allm = horz + vert
         return (allm, horz, vert, [], [])
 
-
-class Pawn(Piece):
-    '''
-    A pawn piece
-    '''
-
-    def legal_moves(self, board):
-        print('Not implemented')
