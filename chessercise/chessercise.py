@@ -348,11 +348,8 @@ class Chessercise(object):
 #        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
 #        import pydevd; pydevd.settrace()
         def _capture(here, opplocs, path_list):
-            self.original_board = copy.deepcopy(self.board)
-            self.all_opponents = list(opplocs.keys())
             self.cap_recursion_depth = 0
             self.cap_max_recursion_depth = 0
-            shortest_path = []
             capture_method = {'bishop': _capture_by_bishop,
                               'knight': _capture_by_knight,
                               'queen':  _capture_by_queen,
@@ -365,24 +362,24 @@ class Chessercise(object):
             for opp in opplocs:
                 opp_list = list(opplocs.keys())
                 opp_list.pop(opp_list.index(opp))
-                capture_method(here,
+                capture_method(copy.deepcopy(self.board),
+                               here,
                                opp,
                                list(opp_list),
-                               [here] + get_moves_method(here, opp),
+                               [here] + get_moves_method(self.board, here, opp),
                                [here, opp])
             print('Final Shortest path: %s' % self.capture_path)
-            return shortest_path
+            return self.capture_path
 
-        def _capture_by_bishop(here, opp, path):
+        def _capture_by_bishop(board, here, opp, path):
             pass
 
-        def _capture_by_knight(here, opp, opplocs, path, cpath):
+        def _capture_by_knight(board, here, opp, opplocs, path, cpath):
             if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
                 return
             self.path_list = []
-            save_board = copy.deepcopy(self.board)
             self.cur_node = path[-1]
-            self.board.set_piece(self.piece, self.cur_node)
+            board.set_piece(self.piece, self.cur_node)
             self.path_list = []
             for new_opp in opplocs:
                 self.cap_recursion_depth += 1
@@ -392,7 +389,8 @@ class Chessercise(object):
                         print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                _capture_by_knight(path[-1],
+                _capture_by_knight(copy.deepcopy(board),
+                                   path[-1],
                                    new_opp,
                                    list(new_opps),
                                    path + _get_moves_for_knight(opp, new_opp),
@@ -413,19 +411,17 @@ class Chessercise(object):
                     print('Shortest path: %s' % (self.capture_path))
                     sys.stdout.flush()
             self.cap_recursion_depth -= 1
-            self.board = copy.deepcopy(save_board)
             return
 
-        def _capture_by_queen(here, opp, path):
+        def _capture_by_queen(board, here, opp, path):
             pass
 
-        def _capture_by_rook(here, opp, opplocs, path, cpath):
+        def _capture_by_rook(board, here, opp, opplocs, path, cpath):
             if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
                 return
             self.path_list = []
-            save_board = copy.deepcopy(self.board)
             self.cur_node = path[-1]
-            self.board.set_piece(self.piece, self.cur_node)
+            board.set_piece(self.piece, self.cur_node)
             self.path_list = []
             for new_opp in opplocs:
                 self.cap_recursion_depth += 1
@@ -435,11 +431,14 @@ class Chessercise(object):
                         print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                _capture_by_rook(path[-1],
-                                   new_opp,
-                                   list(new_opps),
-                                   path + _get_moves_for_rook(opp, new_opp),
-                                   list(cpath + [new_opp]))
+                cpath1 = cpath
+                path1 = path + _get_moves_for_rook(board, opp, new_opp)
+                _capture_by_rook(copy.deepcopy(board),
+                                 path[-1],
+                                 new_opp,
+                                 list(new_opps),
+                                 path + _get_moves_for_rook(board, opp, new_opp),
+                                 list(cpath + [new_opp]))
 
             if self.verbose:
                 print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
@@ -459,22 +458,22 @@ class Chessercise(object):
                     print('Shortest path: %s' % (self.capture_path))
                     sys.stdout.flush()
             self.cap_recursion_depth -= 1
-            self.board = copy.deepcopy(save_board)
             return
 
-        def _get_moves_for_bishop(here, opp):
-            return _get_moves('bishop', here, opp)
+        def _get_moves_for_bishop(board, here, opp):
+            return _get_moves('bishop', board, here, opp)
 
-        def _get_moves_for_knight(here, opp):
+        def _get_moves_for_knight(board, here, opp):
             return list(self.target(here, opp)[0])
 
-        def _get_moves_for_queen(here, opp):
-            return _get_moves('queen', here, opp)
+        def _get_moves_for_queen(board, here, opp):
+            return _get_moves('queen', board, here, opp)
 
-        def _get_moves_for_rook(here, opp):
-            return _get_moves('rook', here, opp)
+        def _get_moves_for_rook(board, here, opp):
+            return _get_moves('rook', board, here, opp)
 
-        def _get_moves(board, ptype, here, opp):
+        def _get_moves(ptype, board, here, opp):
+            board.set_piece(self.piece, here)
             my_moves = self.show_moves(board, self.piece)[0]
             if opp in my_moves:
                 return [opp]
@@ -520,8 +519,7 @@ class Chessercise(object):
         self.cur_node = self.piece.get_node()
         my_color = self.piece.get_color()
 
-        _capture(self.cur_node, _get_opponents(self.board, my_color), [])
-        return
+        return _capture(self.cur_node, _get_opponents(self.board, my_color), [])
 
     def check_cell_occupied(self, cell):
         if self.board.board[cell]['piece']:
