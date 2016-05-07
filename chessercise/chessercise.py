@@ -82,7 +82,7 @@ class Chessercise(object):
                 self.target_node = '%c%d' % (self.target_node[0], row + 1)
 
         self.save_board = copy.deepcopy(self.board)
-        moves = self.show_moves()
+        moves = self.show_moves(self.board)
 
         self.path = list([self.cur_node])
         self.board.set_piece(self.piece, self.cur_node)
@@ -191,7 +191,7 @@ class Chessercise(object):
     def _target_knight(self):
         target_piece = piece_factory('knight')
         self.board.set_piece(target_piece, self.target_node)
-        target_path = self.show_moves(target_piece)[0]
+        target_path = self.show_moves(self.board, target_piece)[0]
         self.board.remove_piece(self.target_node)
 
         self.cur_node = self.orig_pos = self.piece.get_node()
@@ -199,7 +199,7 @@ class Chessercise(object):
 
         self.save_board = copy.deepcopy(self.board)
 
-        moves = self.remove_visited_nodes(self.show_moves()[0])
+        moves = self.remove_visited_nodes(self.show_moves(self.board)[0])
 
         self.path = list([self.cur_node])
         self.board.set_piece(self.piece, self.cur_node)
@@ -214,7 +214,7 @@ class Chessercise(object):
 
         target_piece = piece_factory('bishop')  # we're gonna try diagonals first
         self.board.set_piece(target_piece, self.target_node)
-        target_path = self.show_moves()[0]
+        target_path = self.show_moves(self.board)[0]
         self.board.remove_piece(self.target_node)
 
         self.cur_node = self.orig_pos = self.piece.get_node()
@@ -232,7 +232,7 @@ class Chessercise(object):
         self.cur_node = self.orig_pos
         self.board.set_piece(self.piece, self.cur_node)
         self.board.visit_node(self.cur_node)
-        self.rook(self.show_moves())
+        self.rook(self.show_moves(self.board))
         if len(self.path_list[0]) == 2:
             return(self.path_list)  # Shortest possible path
 
@@ -241,7 +241,7 @@ class Chessercise(object):
             self.cur_node = self.orig_pos
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            self.queen_vh_diagonal(self.show_moves(), vertical)
+            self.queen_vh_diagonal(self.show_moves(self.board), vertical)
 
         # Now try the rook  moves off of the bishop moves off of the horizontal moves
         for v1 in [True, False]:
@@ -249,13 +249,13 @@ class Chessercise(object):
                 self.cur_node = self.orig_pos
                 self.board.set_piece(self.piece, self.cur_node)
                 self.board.visit_node(self.cur_node)
-                self.queen_vh_diagonal_vh(self.show_moves(), v1, v2)
+                self.queen_vh_diagonal_vh(self.show_moves(self.board), v1, v2)
 
         return(self.path_list)
 
     def _target_rook(self):
         self.cur_node = self.orig_pos = self.piece.get_node()
-        self.rook(self.show_moves())
+        self.rook(self.show_moves(self.board))
         return(self.path_list)
 
     def bishop_shortest_path(self, moves):
@@ -305,7 +305,7 @@ class Chessercise(object):
             self.cur_node = p
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves()
+            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.board)
             secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
             secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
             if self.quadrant in [1, 4]:
@@ -337,7 +337,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_node)
-                next_moves = self.show_moves()
+                next_moves = self.show_moves(self.board)
                 self.bishop_shortest_path(next_moves)
                 break
 
@@ -368,7 +368,7 @@ class Chessercise(object):
                 capture_method(here,
                                opp,
                                list(opp_list),
-                               get_moves_method(here, opp),
+                               [here] + get_moves_method(here, opp),
                                [here, opp])
             print('Final Shortest path: %s' % self.capture_path)
             return shortest_path
@@ -395,7 +395,7 @@ class Chessercise(object):
                 _capture_by_knight(path[-1],
                                    new_opp,
                                    list(new_opps),
-                                   path + _get_moves_for_knight(opp, new_opp)[1:],
+                                   path + _get_moves_for_knight(opp, new_opp),
                                    list(cpath + [new_opp]))
             if self.verbose:
                 print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
@@ -438,7 +438,7 @@ class Chessercise(object):
                 _capture_by_rook(path[-1],
                                    new_opp,
                                    list(new_opps),
-                                   path + _get_moves_for_rook(opp, new_opp)[1:],
+                                   path + _get_moves_for_rook(opp, new_opp),
                                    list(cpath + [new_opp]))
 
             if self.verbose:
@@ -474,41 +474,38 @@ class Chessercise(object):
         def _get_moves_for_rook(here, opp):
             return _get_moves('rook', here, opp)
 
-        def _get_moves(ptype, here, opp):
-            my_moves = self.show_moves(self.piece)[0]
+        def _get_moves(board, ptype, here, opp):
+            my_moves = self.show_moves(board, self.piece)[0]
             if opp in my_moves:
                 return [opp]
             else:
-                save_board = copy.deepcopy(self.board)
-                self.board = copy.deepcopy(self.original_board)
                 target_piece = piece_factory(ptype)
-                self.board.set_piece(target_piece, opp)
-                target_moves = self.show_moves(target_piece)[0]
-                self.board.remove_piece(opp)
+                board.set_piece(target_piece, opp)
+                target_moves = self.show_moves(board, target_piece)[0]
+                board.remove_piece(opp)
                 intersection = list(set(my_moves).intersection(target_moves))
                 # Check each move for obstructions - toss out the ones that have them.
                 obstructed_nodes = []
                 for i in intersection:
-                    nodes = get_nodes(self.board, here, i)
+                    nodes = get_nodes(board, here, i)
                     if nodes:
                         for node in nodes:
-                            if self.board.board[node]['piece'] and i != here:
+                            if board.board[node]['piece'] and node != here:
                                 obstructed_nodes.extend([i])
                                 break
-                    nodes = get_nodes(self.board, opp, i)
+                    nodes = get_nodes(board, opp, i)
                     if nodes:
                         for node in nodes:
-                            if self.board.board[node]['piece'] and i != opp:
+                            if board.board[node]['piece'] and node != opp:
                                 obstructed_nodes.extend([i])
                                 break
                 for obstruction in obstructed_nodes:
                     if obstruction in intersection:
                         intersection.pop(intersection.index(obstruction))
-                self.board = copy.deepcopy(save_board)
                 if not intersection:
                     return []
                 else:
-                    return [here, intersection[0], opp]
+                    return [intersection[0], opp]
 
         def _get_opponents(board, color):
             # Get the locations of all opponent pieces
@@ -720,7 +717,7 @@ class Chessercise(object):
                 self.board.set_piece(self.piece, m)
                 # save_cur = self.cur_node
                 # self.cur_node = m
-                current_moves = self.show_moves(self.piece)
+                current_moves = self.show_moves(self.board, self.piece)
                 # self.cur_node = save_cur
                 self.path = list(path)
                 if self.path_list and len(self.path) >= len(self.path_list[0]):
@@ -737,7 +734,7 @@ class Chessercise(object):
                     break
                 self.board.set_piece(self.piece, self.cur_node)
                 self.board.visit_node(self.cur_node)
-                next_moves = self.remove_visited_nodes(self.show_moves()[0])
+                next_moves = self.remove_visited_nodes(self.show_moves(self.board)[0])
                 self.knights_shortest_path(next_moves, target_moves)
         if self.path_list:
             if self.path and len(self.path) < len(self.path_list[0]):
@@ -791,7 +788,7 @@ class Chessercise(object):
             self.cur_node = v
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            (_, horz, _, _, _) = self.show_moves()
+            (_, horz, _, _, _) = self.show_moves(self.board)
             horz = self.remove_visited_nodes(horz)
             if self.quadrant in [1, 3]:
                 horz = sorted(horz, reverse=True)
@@ -824,7 +821,7 @@ class Chessercise(object):
                 self.path.extend([self.cur_node])
                 self.board.set_piece(self.piece, self.cur_node)
                 self.board.visit_node(self.cur_node)
-                (_, _, vert2, _, _) = self.show_moves()
+                (_, _, vert2, _, _) = self.show_moves(self.board)
                 vert2 = self.remove_visited_nodes(vert2)
                 self.vertical(vert2)
 
@@ -877,7 +874,7 @@ class Chessercise(object):
             self.cur_node = p
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves()
+            (_, _, _, secondary_rpath, secondary_lpath) = self.show_moves(self.board)
             secondary_rpath = self.sort_nodes(self.remove_visited_nodes(secondary_rpath))
             secondary_lpath = self.sort_nodes(self.remove_visited_nodes(secondary_lpath))
             if self.quadrant in [1, 3]:
@@ -909,7 +906,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_node)
-                next_moves = self.show_moves()
+                next_moves = self.show_moves(self.board)
                 self.queen_diagonal_path(next_moves)
                 break
 
@@ -964,9 +961,9 @@ class Chessercise(object):
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
             if vertical:
-                (_, _, vhmoves, _, _) = self.show_moves()
+                (_, _, vhmoves, _, _) = self.show_moves(self.board)
             else:
-                (_, vhmoves, _, _, _) = self.show_moves()
+                (_, vhmoves, _, _, _) = self.show_moves(self.board)
             if self.quadrant in [1, 3]:
                 vhmoves = sorted(vhmoves, reverse=True)
             else:
@@ -998,7 +995,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_node)
-                next_moves = self.show_moves()
+                next_moves = self.show_moves(self.board)
                 self.queen_diagonal_vh_path(next_moves, vertical)
                 break
 
@@ -1043,7 +1040,7 @@ class Chessercise(object):
             self.cur_node = m
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            self.queen_diagonal_path(self.show_moves())
+            self.queen_diagonal_path(self.show_moves(self.board))
             self.board = copy.deepcopy(save_board)
 
         return
@@ -1086,18 +1083,18 @@ class Chessercise(object):
             self.cur_node = m
             self.board.set_piece(self.piece, self.cur_node)
             self.board.visit_node(self.cur_node)
-            self.queen_diagonal_vh_path(self.show_moves(), vertical2)
+            self.queen_diagonal_vh_path(self.show_moves(self.board), vertical2)
             self.board = copy.deepcopy(save_board)
 
         return
-    def show_moves(self, piece=None):
+    def show_moves(self, board, piece=None):
         '''
         Show all possible moves for this piece, from this node.
         '''
         if not piece:
-            return self.piece.legal_moves(self.board)
+            return self.piece.legal_moves(board)
         else:
-            return piece.legal_moves(self.board)
+            return piece.legal_moves(board)
 
     def sort_nodes(self, nodes):
         reverse = False
@@ -1169,7 +1166,7 @@ class Chessercise(object):
                 self.board = copy.deepcopy(self.save_board)
                 return
             self.board.visit_node(self.cur_node)
-            (_, horz, _, _, _) = self.show_moves()
+            (_, horz, _, _, _) = self.show_moves(self.board)
             horz = self.remove_visited_nodes(horz)
 
             if self.quadrant in [1, 3]:
@@ -1201,7 +1198,7 @@ class Chessercise(object):
                     self.board = copy.deepcopy(self.save_board)
                     break
                 self.board.visit_node(self.cur_node)
-                (_, _, vert, _, _) = self.show_moves()
+                (_, _, vert, _, _) = self.show_moves(self.board)
                 vert = self.remove_visited_nodes(vert)
                 self.vertical(vert)
                 break
@@ -1334,7 +1331,7 @@ def main(argv):
                 print(mp)
 
     else:
-        moves = obj.show_moves()[0]
+        moves = obj.show_moves(obj.board)[0]
         print moves
 
 if __name__ == '__main__':
