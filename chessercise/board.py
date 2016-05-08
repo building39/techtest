@@ -62,6 +62,9 @@ class Board(object):
     def get_node_color(self, node):
         return self.board[node]['color']
 
+    def get_piece(self, node):
+        return self.board[node]['piece']
+
     def get_random_node(self):
         row = random.randint(1, 8)
         col = random.randint(1, 8)

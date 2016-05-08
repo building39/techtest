@@ -91,7 +91,6 @@ class TestChessercise(unittest.TestCase):
         self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
         self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
 
-    '''
     def testCaptureByQueenC1(self):
         piece = 'queen'
         node = 'c1'
@@ -113,20 +112,19 @@ class TestChessercise(unittest.TestCase):
         c.board.set_piece(opp4, 'a5')
         c.board.set_piece(opp5, 'e5')
         c.board.set_piece(opp6, 'b3')
-        c.board.set_piece(opp7, 'f3')
+        c.board.set_piece(opp7, 'g3')
         c.board.set_piece(opp8, 'e1')
 
         c.verbose = True
 
-        path_list = c.capture()
+        path = c.capture()
 
         answer = ['a1', 'h8']
 
         self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
 
-        self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
+        self.assertEqual(path[0], answer, "Path should be %s, not %s" % (answer, path[0]))
 
-    '''
     def testCaptureByRookC1(self):
         piece = 'rook'
         node = 'c1'

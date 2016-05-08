@@ -22,16 +22,22 @@ def get_nodes(board, piece, start, end):
         # Get column
         step = 1 if start[1] <= end[1] else -1
         cols = {k: v for k, v in board.board.items() if k[0] == start[0]}.keys()
-        return [c for c in cols if (int(c[1]) in range(int(start[1]), int(end[1]) + step, step))]
+        nodes = [c for c in cols if (int(c[1]) in range(int(start[1]), int(end[1]) + step, step))]
+        nodes = sorted(nodes, reverse=False) if step == 1 else sorted(nodes, reverse=True)
+        return nodes
     elif start[1] == end[1]:
         # Get row
         step = 1 if start[0] <= end[0] else -1
-        rows = {k: v for k, v in board.board.items() if int(k[1]) == start[1]}
-        return [r for r in rows if (ord(r[0]) in range(ord(start[0]), ord(end[0]) + step, step))]
+        rows = {k: v for k, v in board.board.items() if k[1] == start[1]}
+        nodes = [r for r in rows if (ord(r[0]) in range(ord(start[0]), ord(end[0]) + step, step))]
+        nodes = sorted(nodes, reverse=False) if step == 1 else sorted(nodes, reverse=True)
+        return nodes
     elif board.get_node_color(start) == board.get_node_color(end):
         # Get diagonal
+        reverse = False
         if start[0] > end[0]:
-            x = end;
+            reverse = True
+            x = start;
             start = end
             end = x
         if start[1] > end[1]:
@@ -44,7 +50,7 @@ def get_nodes(board, piece, start, end):
             node = '%c%d' % (chr(ord(node[0]) + 1), int(node[1]) + row_step)
             if node not in nodes:
                 nodes.extend([node])
-        return nodes
+        return sorted(nodes, reverse=reverse)
     else:
         # no possible moves
         return []
@@ -455,8 +461,37 @@ class Chessercise(object):
                     print('Found path %s' % (short_path)); sys.stdout.flush()
             return short_path
 
-        def _capture_by_queen(board, here, opp, path):
-            pass
+        def _capture_by_queen(board, piece, here, opp, opplocs, path, cpath, short_path):
+            if short_path and len(short_path) == 8:  # minimum path length to capture 8 opponents
+                return
+            board.set_piece(piece, here)
+            for new_opp in opplocs:
+                new_opps = sorted(list(opplocs))
+                new_opps.pop(new_opps.index(new_opp))
+                board.set_piece(piece, opp)
+                copied_board = copy.deepcopy(board)
+                short_path = _capture_by_queen(copied_board,
+                                              copy.deepcopy(piece),
+                                              path[-1],
+                                              new_opp,
+                                              list(new_opps),
+                                              path + _get_moves_for_queen(copied_board,
+                                                                         piece,
+                                                                         opp,
+                                                                         new_opp),
+                                              list(cpath + [new_opp]),
+                                              short_path)
+
+            if len(_get_opponents(board, piece.get_color())) == 0:
+                if self.verbose and path != short_path:
+                    print('Found path %s' % (short_path)); sys.stdout.flush()
+                if short_path:
+                    if len(path) < len(short_path):
+                        short_path = list(path)
+                else:
+                    short_path = list(path)
+
+            return short_path
 
         def _capture_by_rook(board, piece, here, opp, opplocs, path, cpath, short_path):
             if short_path and len(short_path) == 8:  # minimum path length to capture 8 opponents
@@ -508,35 +543,70 @@ class Chessercise(object):
         def _get_moves(ptype, board, piece, here, opp):
             my_moves = self.show_moves(board, piece)[0]
             if opp in my_moves:
-                return [opp]
+                node = None
+                nodes = get_nodes(board, piece, here, opp)
+                for node in nodes:
+                    if board.get_piece(node) and node != here:
+                        break
+                if node == opp:
+                    return [opp]
+            target_piece = piece_factory(ptype)
+            board.set_piece(target_piece, opp)
+            target_moves = self.show_moves(board, target_piece)[0]
+            board.remove_piece(opp)
+            intersection = list(set(my_moves).intersection(target_moves))
+            # Check each move for obstructions - toss out the ones that have them.
+            obstructed_nodes = []
+            for i in intersection:
+                nodes = get_nodes(board, piece, here, i)
+                if nodes:
+                    for node in nodes:
+                        if board.board[node]['piece'] and node != here:
+                            obstructed_nodes.extend([i])
+                            break
+                nodes = get_nodes(board, piece, opp, i)
+                if nodes:
+                    for node in nodes:
+                        if board.board[node]['piece'] and node != opp:
+                            obstructed_nodes.extend([i])
+                            break
+            for obstruction in obstructed_nodes:
+                if obstruction in intersection and len(intersection) > 1:
+                    intersection.pop(intersection.index(obstruction))
+            if not intersection:
+                return []
             else:
-                target_piece = piece_factory(ptype)
-                board.set_piece(target_piece, opp)
-                target_moves = self.show_moves(board, target_piece)[0]
-                board.remove_piece(opp)
-                intersection = list(set(my_moves).intersection(target_moves))
-                # Check each move for obstructions - toss out the ones that have them.
-                obstructed_nodes = []
-                for i in intersection:
-                    nodes = get_nodes(board, piece, here, i)
-                    if nodes:
-                        for node in nodes:
-                            if board.board[node]['piece'] and node != here:
-                                obstructed_nodes.extend([i])
-                                break
-                    nodes = get_nodes(board, piece, opp, i)
-                    if nodes:
-                        for node in nodes:
-                            if board.board[node]['piece'] and node != opp:
-                                obstructed_nodes.extend([i])
-                                break
-                for obstruction in obstructed_nodes:
-                    if obstruction in intersection and len(intersection) > 1:
-                        intersection.pop(intersection.index(obstruction))
-                if not intersection:
-                    return []
-                else:
-                    return [intersection[0], opp]
+                return [intersection[0], opp]
+
+        def _get_moves_orig(ptype, board, piece, here, opp):
+            my_moves = self.show_moves(board, piece)[0]
+            target_piece = piece_factory(ptype)
+            board.set_piece(target_piece, opp)
+            target_moves = self.show_moves(board, target_piece)[0]
+            board.remove_piece(opp)
+            intersection = list(set(my_moves).intersection(target_moves))
+            # Check each move for obstructions - toss out the ones that have them.
+            obstructed_nodes = []
+            for i in intersection:
+                nodes = get_nodes(board, piece, here, i)
+                if nodes:
+                    for node in nodes:
+                        if board.board[node]['piece'] and node != here:
+                            obstructed_nodes.extend([i])
+                            break
+                nodes = get_nodes(board, piece, opp, i)
+                if nodes:
+                    for node in nodes:
+                        if board.board[node]['piece'] and node != opp:
+                            obstructed_nodes.extend([i])
+                            break
+            for obstruction in obstructed_nodes:
+                if obstruction in intersection and len(intersection) > 1:
+                    intersection.pop(intersection.index(obstruction))
+            if not intersection:
+                return []
+            else:
+                return [intersection[0], opp]
 
         def _get_opponents(board, color):
             # Get the locations of all opponent pieces
@@ -1256,8 +1326,8 @@ def main(argv):
                       num_opponents=num_opponents,
                       verbose=verbose)
     if capture:
-        path_list = obj.capture()
-        print(path_list)
+        path = obj.capture()
+        print('Shortest path in %d moves: %s' % (len(path), path))
     elif target:
         path_list = obj.target()
         shortest_paths = []
