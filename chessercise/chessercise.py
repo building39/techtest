@@ -375,57 +375,50 @@ class Chessercise(object):
                                 'knight': _get_moves_for_knight,
                                 'queen':  _get_moves_for_queen,
                                 'rook':   _get_moves_for_rook}[self.piece.get_type()]
-            self.capture_path = []
+            short_path = []
 
             for opp in opplocs:
                 opp_list = list(opplocs.keys())
                 opp_list.pop(opp_list.index(opp))
-                path_list = capture_method(copy.deepcopy(self.board),
-                                           copy.deepcopy(self.piece),
-                                           here,
-                                           opp,
-                                           list(opp_list),
-                                           [here] + get_moves_method(copy.deepcopy(self.board),
-                                                                     copy.deepcopy(self.piece),
-                                                                     here,
-                                                                     opp),
-                                           [here, opp],
-                                           [])
-            shortest_path = path_list[0]
-            for path in path_list:
-                if len(path) < len(shortest_path):
-                    shortest_path = path
-            print('Final Shortest path: %s' % shortest_path)
-            return shortest_path
+                short_path = capture_method(copy.deepcopy(self.board),
+                                            copy.deepcopy(self.piece),
+                                            here,
+                                            opp,
+                                            list(opp_list),
+                                            [here] + get_moves_method(copy.deepcopy(self.board),
+                                                                      copy.deepcopy(self.piece),
+                                                                      here,
+                                                                      opp),
+                                            [here, opp],
+                                            [])
+            print('Final Shortest path: %s' % short_path)
+            return short_path
 
-        def _capture_by_bishop(board, piece, here, opp, opplocs, path, cpath, path_list):
-            self.path_list = []
-            self.cur_node = path[-1]
-            self.path_list = []
+        def _capture_by_bishop(board, piece, here, opp, opplocs, path, cpath, short_path):
             board.set_piece(piece, opp)
             for new_opp in opplocs:
-#                if self.verbose:
-#                    if len(cpath) > 0:
-#                        print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
                 board.set_piece(piece, opp)
                 copied_board = copy.deepcopy(board)
-                path1 = path + _get_moves_for_bishop(copied_board, piece, opp, new_opp)
-                path_list = _capture_by_bishop(copied_board,
+                short_path = _capture_by_bishop(copied_board,
                                                   copy.deepcopy(piece),
                                                   path[-1],
                                                   new_opp,
                                                   list(new_opps),
                                                   path + _get_moves_for_bishop(copied_board, piece, opp, new_opp),
                                                   list(cpath + [new_opp]),
-                                                  path_list)
+                                                  short_path)
 
             if len(_get_opponents(board, piece.get_color())) == 0:
-                path_list.extend([path])
+                if short_path:
+                    if len(path) < len(short_path):
+                        short_path = list(path)
+                else:
+                    short_path = list(path)
                 if self.verbose:
-                    print('Found path %s' % (path))
-            return path_list
+                    print('Found path %s' % (short_path))
+            return short_path
 
         def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath, path_list):
             if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
