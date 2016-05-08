@@ -119,11 +119,11 @@ class TestChessercise(unittest.TestCase):
 
         path = c.capture()
 
-        answer = ['a1', 'h8']
+        answer = ['c1', 'e1', 'g3', 'e5', 'a5', 'a8', 'b8', 'b3', 'e6', 'd6']
 
         self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
 
-        self.assertEqual(path[0], answer, "Path should be %s, not %s" % (answer, path[0]))
+        self.assertEqual(path, answer, "Path should be %s, not %s" % (answer, path))
 
     def testCaptureByRookC1(self):
         piece = 'rook'
@@ -158,66 +158,11 @@ class TestChessercise(unittest.TestCase):
         self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
         self.assertEqual(path, answer, "Path should be %s, not %s" % (answer, path))
 
-
     def testCreateRandomPiece(self):
         pieces = PIECES.keys()
         board = Board(empty=True)
         p = board.create_random_piece()
         self.assertTrue(p.lower() in pieces)
-
-    def testGetDiagonalMoves(self):
-        piece = 'rook'
-        opp1 = piece_factory('pawn', color='black')
-        opp2 = piece_factory('pawn', color='black')
-        opp3 = piece_factory('pawn', color='black')
-        opp4 = piece_factory('pawn', color='black')
-
-        node = 'a1'
-        c = Chessercise(piece, node, num_opponents=0)
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        c.board.set_piece(opp1, 'd3')
-        c.cur_node = node
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        (rdiag, ldiag) = c.get_diagonal_moves()
-        moves = rdiag + ldiag
-        self.assertEqual(moves, ['h8', 'g7', 'f6', 'e5', 'd4', 'c3', 'b2'])
-
-        node = 'a1'
-        c = Chessercise(piece, node, num_opponents=0)
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        c.board.set_piece(opp1, 'c4')
-        c.board.set_piece(opp2, 'd3')
-        c.board.set_piece(opp3, 'd5')
-        c.board.set_piece(opp4, 'e4')
-        c.cur_node = node
-        (rdiag, ldiag) = c.get_diagonal_moves()
-        moves = rdiag + ldiag
-        self.assertEqual(moves, ['h8', 'g7', 'f6', 'e5', 'c3', 'b2'])
-
-        node = 'a8'
-        c = Chessercise(piece, node, num_opponents=0)
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        c.board.set_piece(opp1, 'd4')
-        c.cur_node = node
-        (rdiag, ldiag) = c.get_diagonal_moves()
-        moves = rdiag + ldiag
-        self.assertEqual(moves, ['b7', 'c6', 'd5', 'e4', 'f3', 'g2', 'h1'])
-
-        node = 'a8'
-        c = Chessercise(piece, node, num_opponents=0)
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        c.board.set_piece(opp1, 'e5')
-        (rdiag, ldiag) = c.get_diagonal_moves()
-        moves = rdiag + ldiag
-        self.assertEqual(moves, ['b7', 'c6', 'd5', 'e4', 'f3', 'g2', 'h1'])
-
-        node = 'e4'
-        c = Chessercise(piece, node, num_opponents=0)
-        (c.quadrant, c.target_node) = c._get_farthest_node(node)
-        c.cur_node = node
-        (rdiag, ldiag) = c.get_diagonal_moves()
-        moves = rdiag + ldiag
-        self.assertEqual(moves, ['b1', 'c2', 'd3', 'f5', 'g6', 'h7', 'h1', 'g2', 'f3', 'd5', 'c6', 'b7', 'a8'])
 
     def testGetFarthestNode(self):
         piece = 'knight'
