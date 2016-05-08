@@ -55,6 +55,7 @@ class TestChessercise(unittest.TestCase):
 
         answer = ['c1', 'f4', 'e5', 'd6', 'b8', 'c7', 'a5', 'e1']
 
+        self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
         self.assertEqual(path, answer, "Path should be %s, not %s" % (answer, path))
 
     def testCaptureByKnightC1(self):
@@ -87,6 +88,7 @@ class TestChessercise(unittest.TestCase):
 
         answer = ['a1', 'h8']
 
+        self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
         self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
 
     '''
@@ -120,6 +122,8 @@ class TestChessercise(unittest.TestCase):
 
         answer = ['a1', 'h8']
 
+        self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
+
         self.assertEqual(path_list[0], answer, "Path should be %s, not %s" % (answer, path_list[0]))
 
     '''
@@ -151,8 +155,9 @@ class TestChessercise(unittest.TestCase):
 
         path = c.capture()
 
-        answer = ['c1', 'c3', 'f3', 'b3', 'b8', 'a8', 'a5', 'e5', 'e1', 'e6', 'd6']
+        answer = ['c1', 'e1', 'e5', 'a5', 'a8', 'b8', 'b3', 'f3', 'd3', 'd6']
 
+        self.assertEqual(len(answer), len(path), 'Path length should be %d, not %d' % (len(answer), len(path)))
         self.assertEqual(path, answer, "Path should be %s, not %s" % (answer, path))
 
 

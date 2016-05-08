@@ -406,7 +406,10 @@ class Chessercise(object):
                                                   path[-1],
                                                   new_opp,
                                                   list(new_opps),
-                                                  path + _get_moves_for_bishop(copied_board, piece, opp, new_opp),
+                                                  path + _get_moves_for_bishop(copied_board,
+                                                                               piece,
+                                                                               opp,
+                                                                               new_opp),
                                                   list(cpath + [new_opp]),
                                                   short_path)
 
@@ -417,96 +420,75 @@ class Chessercise(object):
                 else:
                     short_path = list(path)
                 if self.verbose:
-                    print('Found path %s' % (short_path))
+                    print('Found path %s' % (short_path)); sys.stdout.flush()
             return short_path
 
-        def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath, path_list):
-            if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
+        def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath, short_path):
+            if short_path and len(short_path) == 8:  # minimum path length to capture 8 opponents
                 return
-            self.path_list = []
-            self.cur_node = path[-1]
             board.set_piece(self.piece, self.cur_node)
-            self.path_list = []
+
             for new_opp in opplocs:
-                self.cap_recursion_depth += 1
-                self.cap_max_recursion_depth = self.cap_recursion_depth
-                if self.verbose:
-                    if len(cpath) > 0:
-                        print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                _capture_by_knight(copy.deepcopy(board),
-                                   copy.deepcopy(piece),
-                                   path[-1],
-                                   new_opp,
-                                   list(new_opps),
-                                   path + _get_moves_for_knight(board, piece, opp, new_opp),
-                                   list(cpath + [new_opp]),
-                                   path_list)
-            if self.verbose:
-                print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
-            if self.cap_recursion_depth == 7:
-                if self.capture_path:
-                    if path and len(path) < len(self.capture_path):
-                        self.capture_path = list(path)
-                        if self.verbose:
-                            print('New path discovered: %s' % self.capture_path)
+                board.set_piece(piece, opp)
+                copied_board = copy.deepcopy(board)
+                short_path = _capture_by_knight(copied_board,
+                                                copy.deepcopy(piece),
+                                                path[-1],
+                                                new_opp,
+                                                list(new_opps),
+                                                path + _get_moves_for_knight(copied_board,
+                                                                             piece,
+                                                                             opp,
+                                                                             new_opp),
+                                                list(cpath + [new_opp]),
+                                                short_path)
+
+            if len(_get_opponents(board, piece.get_color())) == 0:
+                if short_path:
+                    if len(path) < len(short_path):
+                        short_path = list(path)
                 else:
-                    self.capture_path = list(path)
-                    if self.verbose:
-                        print('First path discovered: %s' % self.capture_path)
+                    short_path = list(path)
                 if self.verbose:
-                    print('Shortest path: %s' % (self.capture_path))
-                    sys.stdout.flush()
-            self.cap_recursion_depth -= 1
-            return
+                    print('Found path %s' % (short_path)); sys.stdout.flush()
+            return short_path
 
         def _capture_by_queen(board, here, opp, path):
             pass
 
-        def _capture_by_rook(board, piece, here, opp, opplocs, path, cpath, path_list):
-            if self.capture_path and len(self.capture_path) == 8:  # minimum path length to capture 8 opponents
+        def _capture_by_rook(board, piece, here, opp, opplocs, path, cpath, short_path):
+            if short_path and len(short_path) == 8:  # minimum path length to capture 8 opponents
                 return
-            self.path_list = []
-            self.cur_node = path[-1]
             board.set_piece(piece, here)
-            self.path_list = []
             for new_opp in opplocs:
-                self.cap_recursion_depth += 1
-                self.cap_max_recursion_depth = self.cap_recursion_depth
-                if self.verbose:
-                    if len(cpath) > 0:
-                        print('%d %s' % (len(cpath) + 1, cpath + [new_opp])); sys.stdout.flush()
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                _capture_by_rook(copy.deepcopy(board),
-                                 copy.deepcopy(piece),
-                                 path[-1],
-                                 new_opp,
-                                 list(new_opps),
-                                 path + _get_moves_for_rook(board, piece, opp, new_opp),
-                                 list(cpath + [new_opp]),
-                                 path_list)
+                board.set_piece(piece, opp)
+                copied_board = copy.deepcopy(board)
+                short_path = _capture_by_rook(copied_board,
+                                              copy.deepcopy(piece),
+                                              path[-1],
+                                              new_opp,
+                                              list(new_opps),
+                                              path + _get_moves_for_rook(copied_board,
+                                                                         piece,
+                                                                         opp,
+                                                                         new_opp),
+                                              list(cpath + [new_opp]),
+                                              short_path)
 
-            if self.verbose:
-                print('Recursion depth: now: %d Max: %d' % (self.cap_recursion_depth, self.cap_max_recursion_depth))
-            if self.cap_recursion_depth == 7:
-                if self.capture_path:
-                    if path and len(path) < len(self.capture_path):
-                        self.capture_path = list(path)
-                        if self.verbose:
-                            print('New path discovered: %s' % self.capture_path)
-                            if not self.capture_path:
-                                import traceback; traceback.print_stack()
+            if len(_get_opponents(board, piece.get_color())) == 0:
+                if self.verbose and path != short_path:
+                    print('Found path %s' % (short_path)); sys.stdout.flush()
+                if short_path:
+                    if len(path) < len(short_path):
+                        short_path = list(path)
                 else:
-                    self.capture_path = list(path)
-                    if self.verbose:
-                        print('First path discovered: %s' % self.capture_path)
-                if self.verbose:
-                    print('Shortest path: %s' % (self.capture_path))
-                    sys.stdout.flush()
-            self.cap_recursion_depth -= 1
-            return
+                    short_path = list(path)
+
+            return short_path
 
         def _get_moves_for_bishop(board, piece, here, opp):
             if board.get_node_color(here) != board.get_node_color(opp):
