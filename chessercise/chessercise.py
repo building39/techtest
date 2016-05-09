@@ -379,18 +379,24 @@ class Chessercise(object):
             for opp in opplocs:
                 opp_list = list(opplocs.keys())
                 opp_list.pop(opp_list.index(opp))
+                if self.piece.get_type() == 'knight':
+                    start = get_moves_method(copy.deepcopy(self.board),
+                                             copy.deepcopy(self.piece),
+                                             here,
+                                             opp)
+                else:
+                    start = [here] + get_moves_method(copy.deepcopy(self.board),
+                                                      copy.deepcopy(self.piece),
+                                                      here,
+                                                      opp)
                 short_path = capture_method(copy.deepcopy(self.board),
                                             copy.deepcopy(self.piece),
                                             here,
                                             opp,
                                             list(opp_list),
-                                            [here] + get_moves_method(copy.deepcopy(self.board),
-                                                                      copy.deepcopy(self.piece),
-                                                                      here,
-                                                                      opp),
+                                            start,
                                             [here, opp],
                                             [])
-
             print('Final Shortest path: %s' % short_path)
             return short_path
 
