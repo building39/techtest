@@ -368,11 +368,10 @@ class Chessercise(object):
         return
 
     def capture(self):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
+        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
+        import pydevd; pydevd.settrace()
         def _capture(here, opplocs, path_list):
-            self.cap_recursion_depth = 0
-            self.cap_max_recursion_depth = 0
+
             capture_method = {'bishop': _capture_by_bishop,
                               'knight': _capture_by_knight,
                               'queen':  _capture_by_queen,
@@ -397,6 +396,7 @@ class Chessercise(object):
                                                                       opp),
                                             [here, opp],
                                             [])
+
             print('Final Shortest path: %s' % short_path)
             return short_path
 
@@ -432,26 +432,25 @@ class Chessercise(object):
         def _capture_by_knight(board, piece, here, opp, opplocs, path, cpath, short_path):
             if short_path and len(short_path) == 8:  # minimum path length to capture 8 opponents
                 return
-            board.set_piece(self.piece, self.cur_node)
+            self.board.set_piece(self.piece, self.cur_node)
 
             for new_opp in opplocs:
                 new_opps = sorted(list(opplocs))
                 new_opps.pop(new_opps.index(new_opp))
-                board.set_piece(piece, opp)
-                copied_board = copy.deepcopy(board)
-                short_path = _capture_by_knight(copied_board,
-                                                copy.deepcopy(piece),
+                self.board.set_piece(piece, opp)
+                short_path = _capture_by_knight(self.board,
+                                                self.piece,
                                                 path[-1],
                                                 new_opp,
                                                 list(new_opps),
-                                                path + _get_moves_for_knight(copied_board,
-                                                                             piece,
+                                                path + _get_moves_for_knight(self.board,
+                                                                             self.piece,
                                                                              opp,
                                                                              new_opp),
                                                 list(cpath + [new_opp]),
                                                 short_path)
 
-            if len(_get_opponents(board, piece.get_color())) == 0:
+            if len(_get_opponents(board, self.piece.get_color())) == 0:
                 if short_path:
                     if len(path) < len(short_path):
                         short_path = list(path)
