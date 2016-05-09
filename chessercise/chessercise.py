@@ -75,8 +75,6 @@ class Chessercise(object):
     '''
 
     def __init__(self, piece, node, num_opponents=0, verbose=False):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
         self.board = Board(empty=True)
         self.original_board = copy.deepcopy(self.board)
         self.piece = piece_factory(piece)
@@ -282,8 +280,6 @@ class Chessercise(object):
         return(self.path_list)
 
     def bishop_shortest_path(self, moves):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
         self.recursion_depth += 1
         self.max_recursion_depth += 1
         path = list(self.path)
@@ -368,8 +364,6 @@ class Chessercise(object):
         return
 
     def capture(self):
-        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-        import pydevd; pydevd.settrace()
         def _capture(here, opplocs, path_list):
 
             capture_method = {'bishop': _capture_by_bishop,
@@ -782,9 +776,6 @@ class Chessercise(object):
         return culled_nodes
 
     def rook(self, moves):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
         self.save_board = copy.deepcopy(self.board)
         (_, _, vert, _, _) = moves
         vert = self.remove_visited_nodes(vert)
@@ -857,8 +848,6 @@ class Chessercise(object):
         return
 
     def queen_diagonal_path(self, moves):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
         self.recursion_depth += 1
         self.max_recursion_depth += 1
         path = list(self.path)
@@ -943,8 +932,6 @@ class Chessercise(object):
         return
 
     def queen_diagonal_vh_path(self, moves, vertical):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
         self.recursion_depth += 1
         self.max_recursion_depth += 1
         path = list(self.path)
@@ -1032,9 +1019,6 @@ class Chessercise(object):
         return
 
     def queen_vh_diagonal(self, moves, vertical):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
         save_board = copy.deepcopy(self.board)
         if vertical:
             (_, moves, _, _, _) = moves
@@ -1075,9 +1059,6 @@ class Chessercise(object):
         return
 
     def queen_vh_diagonal_vh(self, moves, vertical1, vertical2):
-#        sys.path.append('/opt/eclipse/plugins/org.python.pydev_4.5.5.201603221110/pysrc/')
-#        import pydevd; pydevd.settrace()
-
         save_board = copy.deepcopy(self.board)
         if vertical1:
             (_, _, moves1, _, _) = moves
